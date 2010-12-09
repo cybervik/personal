@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.whereyoudey.form;
+package com.whereyoudey.form.helper;
 
 import com.sun.lwuit.Container;
 import com.sun.lwuit.Display;
@@ -18,14 +18,14 @@ import com.sun.lwuit.layouts.BoxLayout;
  *
  * @author Vikram S
  */
-class Section {
+public class Section {
 
     private final Form form;
     private final Label title;
     private final Label desc;
     private final Container container;
 
-    Section(final Form form, String title, String desc) {
+    public Section(final Form form, String title, String desc) {
         this.form = form;
         container = new Container(new BoxLayout(BoxLayout.Y_AXIS));
         addLine();
@@ -65,7 +65,7 @@ class Section {
         return label;
     }
 
-    void setDetails(String description) {
+    public void setDetails(String description) {
         desc.setText(description);
     }
 }

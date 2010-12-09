@@ -1,23 +1,22 @@
 package com.whereyoudey.form;
 
-import java.io.IOException;
+import com.whereyoudey.utils.UIUtils;
 
 import javax.microedition.midlet.MIDletStateChangeException;
 
 import com.sun.lwuit.Command;
-import com.sun.lwuit.Component;
 import com.sun.lwuit.Container;
 import com.sun.lwuit.Dialog;
 import com.sun.lwuit.Display;
 import com.sun.lwuit.Font;
 import com.sun.lwuit.Form;
-import com.sun.lwuit.Image;
 import com.sun.lwuit.Label;
 import com.sun.lwuit.TextField;
 import com.sun.lwuit.events.ActionEvent;
 import com.sun.lwuit.events.ActionListener;
 import com.sun.lwuit.layouts.BorderLayout;
 import com.sun.lwuit.layouts.BoxLayout;
+import com.sun.lwuit.plaf.Border;
 import com.whereyoudey.WhereYouDey;
 import com.whereyoudey.service.Result;
 import com.whereyoudey.service.SearchService;
@@ -37,7 +36,6 @@ public class SearchForm implements ActionListener, Runnable {
         "/img/icons/MoviesIcon.png",
         "/img/icons/FlightsIcon.png"
     };
-
     private WhereYouDey midlet;
     private Form searchForm;
     private ResultForm resultForm;
@@ -62,6 +60,14 @@ public class SearchForm implements ActionListener, Runnable {
 
     private void addBusinessTextField() {
         business = uiUtils.addTextFieldWithLabel(topContainer, "Businesses or Keywords");
+//        business.setFocus(true);
+        searchForm.setFocused(business);
+    }
+
+    private void createForm() {
+        searchForm = new Form("");
+        searchForm.setLayout(new BorderLayout());
+        searchForm.getStyle().setBgColor(COLOR_BACKGROUND);
     }
 
     private void hideWait() {
@@ -71,15 +77,13 @@ public class SearchForm implements ActionListener, Runnable {
     }
 
     private void initForm() {
-        searchForm = new Form("");
-        searchForm.setLayout(new BorderLayout());
-        searchForm.getStyle().setBgColor(COLOR_BACKGROUND);
+        createForm();
         addMainElements();
-        addButtons();
-        searchForm.show();
+        addMenuActions();
+        show();
     }
 
-    private void addButtons() {
+    private void addMenuActions() {
         searchForm.addCommandListener(this);
         searchForm.addCommand(new Command("Find"));
         searchForm.addCommand(new Command("Exit"));
@@ -121,6 +125,7 @@ public class SearchForm implements ActionListener, Runnable {
         addIcons();
         addBusinessTextField();
         addAreaTextField();
+        addSelectCityLink();
         searchForm.addComponent(BorderLayout.NORTH, topContainer);
     }
 
@@ -128,9 +133,16 @@ public class SearchForm implements ActionListener, Runnable {
         Container icons = uiUtils.getBoxLayoutColumnStyleContainer();
         int noOfIconsFittingInScreenWidth = (DISPLAY_WIDTH - MORE_LINK_POSSIBLE_WIDTH) / ICON_WIDTH;
         for (int i = 0; i < noOfIconsFittingInScreenWidth && i < iconPaths.length; i++) {
-            icons.addComponent(uiUtils.getImage(iconPaths[i], ICON_WIDTH));
+            Label image = uiUtils.getImage(iconPaths[i], ICON_WIDTH);
+            image.setFocusable(true);
+            if (i == 0) {
+                image.getStyle().setBorder(Border.createBevelRaised());
+            }
+            image.getSelectedStyle().setBorder(Border.createLineBorder(1));
+            icons.addComponent(image);
         }
-        icons.addComponent(uiUtils.getLink("More"));
+        Label moreLink = uiUtils.getLink("More");
+        icons.addComponent(moreLink);
         topContainer.addComponent(icons);
     }
 
@@ -184,5 +196,11 @@ public class SearchForm implements ActionListener, Runnable {
         Result[] results = searchService.search(businessText, areaText, filter);
         hideWait();
         showResultForm(results);
+    }
+
+    private void addSelectCityLink() {
+        Label chooseCityLink = uiUtils.getLink("or Choose City");
+        chooseCityLink.setFocusable(true);
+        topContainer.addComponent(chooseCityLink);
     }
 }

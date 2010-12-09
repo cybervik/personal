@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.whereyoudey.form;
+package com.whereyoudey.utils;
 
 import com.sun.lwuit.Component;
 import com.sun.lwuit.Container;
@@ -12,6 +12,7 @@ import com.sun.lwuit.Image;
 import com.sun.lwuit.Label;
 import com.sun.lwuit.TextField;
 import com.sun.lwuit.layouts.BoxLayout;
+import com.sun.lwuit.plaf.Border;
 import java.io.IOException;
 
 /**
@@ -44,6 +45,9 @@ public class UIUtils {
         Label link = new Label(linkText);
         Font underlinedSmallFont = getFont(Font.STYLE_UNDERLINED, Font.SIZE_SMALL);
         link.getStyle().setFont(underlinedSmallFont);
+        link.setFocusable(true);
+        link.getSelectedStyle().setBorder(Border.createLineBorder(1));
+        link.getSelectedStyle().setFont(link.getStyle().getFont());
         return link;
     }
 

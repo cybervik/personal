@@ -20,7 +20,7 @@ import com.sun.lwuit.geom.Rectangle;
 import com.sun.lwuit.layouts.BorderLayout;
 import com.sun.lwuit.layouts.BoxLayout;
 import com.whereyoudey.WhereYouDey;
-import com.whereyoudey.custom.ResultContainer;
+import com.whereyoudey.form.helper.ResultContainer;
 import com.whereyoudey.service.Result;
 import com.whereyoudey.service.SearchService;
 import com.whereyoudey.webservice.ArrayOfString;

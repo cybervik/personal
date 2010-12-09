@@ -18,6 +18,7 @@ import com.sun.lwuit.events.ActionListener;
 import com.sun.lwuit.layouts.BoxLayout;
 import com.whereyoudey.WhereYouDey;
 import com.whereyoudey.service.Result;
+import com.whereyoudey.form.helper.Section;
 import java.io.IOException;
 import javax.microedition.io.ConnectionNotFoundException;
 import javax.microedition.midlet.MIDletStateChangeException;
