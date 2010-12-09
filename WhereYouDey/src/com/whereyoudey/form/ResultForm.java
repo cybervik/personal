@@ -4,7 +4,6 @@
  */
 package com.whereyoudey.form;
 
-import com.sun.lwuit.Button;
 import com.sun.lwuit.Command;
 import com.sun.lwuit.Component;
 import com.sun.lwuit.Container;
@@ -20,8 +19,6 @@ import com.sun.lwuit.events.ActionListener;
 import com.sun.lwuit.geom.Rectangle;
 import com.sun.lwuit.layouts.BorderLayout;
 import com.sun.lwuit.layouts.BoxLayout;
-import com.sun.lwuit.layouts.GridLayout;
-import com.sun.lwuit.plaf.Border;
 import com.whereyoudey.WhereYouDey;
 import com.whereyoudey.custom.ResultContainer;
 import com.whereyoudey.service.Result;
@@ -36,12 +33,10 @@ import javax.microedition.io.ConnectionNotFoundException;
  */
 class ResultForm implements ActionListener {
 
+    public static final int COLOR_ADV_BACKGROUND = 0xffa500;
     public static final int COLOR_BLACK = 0x000000;
     public static final int COLOR_WHITE = 0xffffff;
     public static final int COLOR_SELECTEDITEM_BACKGROUND = 0x9999ff;
-    static final int BUTTON_PANEL_BACKGROUND_COLOR = 0xffa500;
-    static final int BUTTON_BACKGROUND_COLOR = 0xff4500;
-    static final int BUTTON_FONT_COLOR = 0xffffff;
     private WhereYouDey midlet;
     private Form form;
     private Result[] results;
@@ -50,7 +45,6 @@ class ResultForm implements ActionListener {
     private int selectItemPos = -1;
     private ResultContainer resultContainer;
     private int resultCount;
-    private Button callButton;
     private DetailsForm detailsForm;
     private int startIndex;
     private int MAX_RESULTS = 10;
@@ -129,8 +123,8 @@ class ResultForm implements ActionListener {
                 resultCount++;
                 final String bizName = result.getProperty("Name");
                 final String address = result.getProperty("Address");
-                final String street = result.getProperty("Street");
-                final String area = result.getProperty("Area");
+//                final String street = result.getProperty("Street");
+//                final String area = result.getProperty("Area");
                 final String city = result.getProperty("City");
                 final String state = result.getProperty("State");
                 final String phone = result.getProperty("Phone");
@@ -166,62 +160,12 @@ class ResultForm implements ActionListener {
         form.show();
     }
 
-    private void addButtons() {
-        final Container buttonsPanel = getButtonsPanel();
-        callButton = addButton(buttonsPanel, "Call");
-        addCallHandler(callButton);
-        addButton(buttonsPanel, "Select");
-        final Button backButton = addButton(buttonsPanel, "Back");
-        addBackHandler(backButton);
-        form.addComponent(BorderLayout.SOUTH, buttonsPanel);
-    }
-
-    private void addBackHandler(Button backButton) {
-        backButton.addActionListener(new ActionListener() {
-
-            public void actionPerformed(ActionEvent ae) {
-                midlet.getSearchForm().show();
-            }
-        });
-    }
-
-    private Button addButton(Container buttons, String buttonName) {
-        Button button = new Button(buttonName);
-        button.setAlignment(Component.CENTER);
-        button.getStyle().setMargin(1, 1, 8, 10);
-        Font smallFont = Font.createSystemFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL);
-        button.getStyle().setFont(smallFont);
-        button.getStyle().setBgColor(BUTTON_BACKGROUND_COLOR);
-        button.getStyle().setFgColor(BUTTON_FONT_COLOR);
-        button.setFocusable(false);
-        buttons.addComponent(button);
-        return button;
-    }
-
-    private Container getButtonsPanel() {
-        Container buttonsPanel = new Container(new GridLayout(1, 3));
-        paintButtonsPanelBackground(buttonsPanel);
-        return buttonsPanel;
-    }
-
-    private void paintButtonsPanelBackground(Container buttons) {
-        buttons.getStyle().setBgPainter(new Painter() {
-
-            public void paint(Graphics g, Rectangle rect) {
-                g.setColor(SearchForm.BUTTON_PANEL_BACKGROUND_COLOR);
-                g.fillRect(rect.getX(), rect.getY(), rect.getSize().getWidth(),
-                        rect.getSize().getHeight());
-
-            }
-        });
-    }
-
     private Container selectItem() {
         Container selectedItem = (Container) resultContainer.getComponentAt(selectItemPos);
-        final Component heading = selectedItem.getComponentAt(0);
-        heading.getStyle().setBgColor(COLOR_SELECTEDITEM_BACKGROUND);
-        heading.getStyle().setFgColor(COLOR_BLACK);
-        header.setText(((Label) heading).getText());
+        final Component title = selectedItem.getComponentAt(0);
+        title.getStyle().setBgColor(COLOR_SELECTEDITEM_BACKGROUND);
+        title.getStyle().setFgColor(COLOR_BLACK);
+        header.setText(((Label) title).getText());
         return selectedItem;
     }
 
@@ -232,26 +176,12 @@ class ResultForm implements ActionListener {
         heading.getStyle().setFgColor(COLOR_BLACK);
     }
 
-    private boolean isAdvertisement(final Component item) {
-        try {
-            Label label = (Label) item;
-            if (label.getText().equals("Advertisement")) {
-                return true;
-            }
-        } catch (Exception e) {
-        }
-        return false;
-    }
-
     private void addAdvLabel(Container listingContainer) {
         final Label advLabel = new Label("Advertisement");
         listingContainer.addComponent(advLabel);
         Font smallFont = Font.createSystemFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL);
-        advLabel.getStyle().setBgColor(0xffa500);
+        advLabel.getStyle().setBgColor(COLOR_ADV_BACKGROUND);
         advLabel.getStyle().setFgColor(COLOR_BLACK);
-        final Border border = advLabel.getStyle().getBorder();
-        border.createLineBorder(2);
-        advLabel.getStyle().setBorder(border);
         advLabel.getStyle().setFont(smallFont);
     }
 
@@ -343,14 +273,6 @@ class ResultForm implements ActionListener {
                     selectItemPos = (selectItemPos == (resultCount - 1)) ? selectItemPos : selectItemPos + 1;
                     selectItemDown();
                     break;
-                case -5:
-                    pressCallButton();
-                    break;
-                case -6:
-                    pressCallButton();
-                    break;
-                case -7:
-                    break;
             }
             System.out.println("Key Pressed - " + keyEvent + " - " + selectItemPos);
         }
@@ -360,15 +282,6 @@ class ResultForm implements ActionListener {
     private void showDialog(String message) {
         Dialog warning = new Dialog();
         warning.show(null, message, "Ok", null);
-    }
-
-    private boolean isSubContainer(Component item) {
-        try {
-            Container c = (Container) item;
-            return true;
-        } catch (Exception e) {
-        }
-        return false;
     }
 
     private void selectItemDown() {
@@ -383,41 +296,14 @@ class ResultForm implements ActionListener {
         resultContainer.scrollComponentToVisible(firstComponent);
     }
 
-    private void addCallHandler(Button callButton) {
-        callButton.addActionListener(new ActionListener() {
-
-            public void actionPerformed(ActionEvent ae) {
-                try {
-                    final Result selectedItem = results[selectItemPos];
-                    final String phoneNumber = selectedItem.getProperty("Phone");
-                    midlet.platformRequest(phoneNumber);
-                } catch (ConnectionNotFoundException ex) {
-                    ex.printStackTrace();
-                }
-            }
-        });
-    }
-
-    private void pressCallButton() {
-        try {
-            callButton.getStyle().setBgColor(COLOR_WHITE);
-            callButton.getStyle().setFgColor(COLOR_BLACK);
-            final Result selectedItem = results[selectItemPos];
-            final String phoneNumber = selectedItem.getProperty("Phone");
-            midlet.platformRequest("tel:" + phoneNumber);
-        } catch (ConnectionNotFoundException ex) {
-            ex.printStackTrace();
-        }
-    }
-
     void show() {
         form.show();
     }
 
     private void search(int startIndex, int endIndex) {
         final SearchForm searchForm = midlet.getSearchForm();
-        final String searchBusinessText = searchForm.getSearchBusiness().trim();
-        final String searchAreaText = searchForm.getSearchArea().trim();
+        final String searchBusinessText = searchForm.getSearchBusinessText().trim();
+        final String searchAreaText = searchForm.getSearchAreaText().trim();
         SearchService searchService = new SearchService();
         ArrayOfString filter = new ArrayOfString();
         filter.setString(new String[]{"", "", "", "", String.valueOf(startIndex), String.valueOf(endIndex)});
