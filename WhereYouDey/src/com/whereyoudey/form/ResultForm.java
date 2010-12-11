@@ -23,20 +23,34 @@ import com.whereyoudey.WhereYouDey;
 import com.whereyoudey.form.helper.ResultContainer;
 import com.whereyoudey.service.Result;
 import com.whereyoudey.service.SearchService;
+import com.whereyoudey.utils.UIUtils;
 import com.whereyoudey.webservice.ArrayOfString;
 import java.io.IOException;
+import java.util.Vector;
 import javax.microedition.io.ConnectionNotFoundException;
 
 /**
  *
  * @author Vikram S
  */
-class ResultForm implements ActionListener {
+public class ResultForm implements ActionListener {
 
     public static final int COLOR_ADV_BACKGROUND = 0xffa500;
     public static final int COLOR_BLACK = 0x000000;
     public static final int COLOR_WHITE = 0xffffff;
     public static final int COLOR_SELECTEDITEM_BACKGROUND = 0x9999ff;
+    public static final String OPTION_BACK = "Back";
+    public static final String OPTION_CALL = "Call";
+    public static final String OPTION_EXIT = "Exit";
+    public static final String OPTION_FILTER_BY_VIDEOS = "Filter by videos";
+    public static final String OPTION_HELP = "Help";
+    public static final String OPTION_HOME = "Home";
+    public static final String OPTION_SELECT = "Select";
+    public static final String OPTION_SORT_BY_AREA = "Sort by area";
+    public static final String OPTION_SORT_BY_CITY = "Sort by city";
+    public static final String OPTION_SORT_BY_RELEVANCE = "Sort by relevance";
+    public static final String SORT_ORDER_ASCENDING = "ASC";
+    public static final String SORT_ORDER_DESCENDING = "DSC";
     private WhereYouDey midlet;
     private Form form;
     private Result[] results;
@@ -48,23 +62,26 @@ class ResultForm implements ActionListener {
     private DetailsForm detailsForm;
     private int startIndex;
     private int MAX_RESULTS = 10;
+    private UIUtils uiUtils;
 
     ResultForm(WhereYouDey midlet, Result[] results) {
         initVariables(midlet);
         initForm();
         addHeader();
         addResultsSection(results);
-        form.addCommand(new Command("Back"));
-        form.addCommand(new Command("Select"));
-        form.addCommand(new Command("Call"));
+        form.addCommand(new Command(OPTION_BACK));
+        form.addCommand(new Command(OPTION_SELECT));
+        form.addCommand(new Command(OPTION_CALL));
 //        form.addCommand(new Command("Next"));
 //        form.addCommand(new Command("Previous"));
 //        form.addCommand(new Command("First"));
-//        form.addCommand(new Command("Sort by relevenace"));
-//        form.addCommand(new Command("Filter by city"));
-//        form.addCommand(new Command("Filter by area"));
-//        form.addCommand(new Command("Help"));
-//        form.addCommand(new Command("Home"));
+        form.addCommand(new Command(OPTION_SORT_BY_RELEVANCE));
+        form.addCommand(new Command(OPTION_SORT_BY_CITY));
+        form.addCommand(new Command(OPTION_SORT_BY_AREA));
+        form.addCommand(new Command(OPTION_FILTER_BY_VIDEOS));
+        form.addCommand(new Command(OPTION_HELP));
+        form.addCommand(new Command(OPTION_HOME));
+        form.addCommand(new Command(OPTION_EXIT));
         form.addCommandListener(this);
         form.show();
     }
@@ -76,10 +93,73 @@ class ResultForm implements ActionListener {
         return detailsForm;
     }
 
+    private void goBack() {
+        midlet.getSearchForm().show();
+    }
+
+    private void initProcessedResults(Result[] results) throws NumberFormatException {
+        this.results = results;
+        this.resultCount = 0;
+        this.selectItemPos = -1;
+        this.resultContainer.removeAll();
+        int reviewCount;
+        for (int i = 0; i < results.length; i++) {
+            Result result = results[i];
+            if (result != null) {
+                resultCount++;
+                String bizName = result.getProperty("Name");
+                final String address = result.getProperty("Address");
+                //                final String street = result.getProperty("Street");
+                //                final String area = result.getProperty("Area");
+                final String city = result.getProperty("City");
+                final String state = result.getProperty("State");
+                final String phone = result.getProperty("Phone");
+                final String ratingStr = result.getProperty("StarReview");
+                final String reviewCountStr = result.getProperty("ReviewCount");
+                Container itemContainer = new Container(new BoxLayout(BoxLayout.Y_AXIS));
+                try {
+                    reviewCount = Integer.parseInt(reviewCountStr);
+                    for (int j = 0; j < reviewCount; j++) {
+                        bizName += "*";
+                    }
+                } catch (Exception e) {
+                }
+                addBoldFontLabel(bizName, itemContainer);
+                addSmallFontLabel(address, itemContainer);
+                addSmallFontLabel(city + ", " + state, itemContainer);
+                addRating(ratingStr, itemContainer);
+                addSmallFontLabel(phone, itemContainer);
+                if ((resultCount % 3) == 0) {
+                    addAdvLabel(itemContainer);
+                }
+                resultContainer.addComponent(itemContainer);
+                if (selectItemPos == -1) {
+                    selectItemPos = 0;
+                    selectItem();
+                }
+                itemContainer.getStyle().setBgPainter(new Painter() {
+
+                    public void paint(Graphics g, Rectangle r) {
+                        g.setColor(0x000000);
+                        g.fillRect(r.getX(), r.getY(), r.getSize().getWidth(), 1);
+                    }
+                });
+            }
+        }
+        if (resultCount > 0) {
+            resultCounter.setText("Result 1 - " + resultCount);
+            selectItemUp();
+        } else {
+            resultCounter.setText("No results found");
+        }
+        form.show();
+    }
+
     private void initVariables(WhereYouDey midlet) {
         this.midlet = midlet;
         this.selectItemPos = -1;
         this.startIndex = 1;
+        this.uiUtils = new UIUtils();
     }
 
     private void initForm() {
@@ -113,51 +193,8 @@ class ResultForm implements ActionListener {
     }
 
     public void initResults(Result[] results) throws NumberFormatException {
-        this.results = results;
-        this.resultCount = 0;
-        this.selectItemPos = -1;
-        this.resultContainer.removeAll();
-        for (int i = 0; i < results.length; i++) {
-            Result result = results[i];
-            if (result != null) {
-                resultCount++;
-                final String bizName = result.getProperty("Name");
-                final String address = result.getProperty("Address");
-//                final String street = result.getProperty("Street");
-//                final String area = result.getProperty("Area");
-                final String city = result.getProperty("City");
-                final String state = result.getProperty("State");
-                final String phone = result.getProperty("Phone");
-                final String ratingStr = result.getProperty("StarReview");
-                Container itemContainer = new Container(new BoxLayout(BoxLayout.Y_AXIS));
-                addBoldFontLabel(bizName, itemContainer);
-                addSmallFontLabel(address, itemContainer);
-                addSmallFontLabel(city + ", " + state, itemContainer);
-                addRating(ratingStr, itemContainer);
-                addSmallFontLabel(phone, itemContainer);
-                if ((resultCount % 3) == 0) {
-                    addAdvLabel(itemContainer);
-                }
-                resultContainer.addComponent(itemContainer);
-                if (selectItemPos == -1) {
-                    selectItemPos = 0;
-                    selectItem();
-                }
-                itemContainer.getStyle().setBgPainter(new Painter() {
-
-                    public void paint(Graphics g, Rectangle r) {
-                        g.setColor(0x000000);
-                        g.fillRect(r.getX(), r.getY(), r.getSize().getWidth(), 1);
-                    }
-                });
-            }
-        }
-        if (resultCount > 0) {
-            resultCounter.setText("Result 1 - " + resultCount);
-        } else {
-            resultCounter.setText("No results found");
-        }
-        form.show();
+        sort("ReviewCount", results, SORT_ORDER_DESCENDING);
+        initProcessedResults(results);
     }
 
     private Container selectItem() {
@@ -232,16 +269,16 @@ class ResultForm implements ActionListener {
         final Command command = ae.getCommand();
         if (command != null) {
             final String commandName = command.getCommandName();
-            if (commandName.equals("Back")) {
-                midlet.getSearchForm().show();
-            } else if (commandName.equals("Select")) {
+            if (commandName.equals(OPTION_BACK)) {
+                goBack();
+            } else if (commandName.equals(OPTION_SELECT)) {
                 if (selectItemPos == -1) {
                     showDialog("Please select a result");
                     return;
                 }
                 DetailsForm detailsForm = getDetailsForm();
                 detailsForm.init(results[selectItemPos]);
-            } else if (commandName.equals("Call")) {
+            } else if (commandName.equals(OPTION_CALL)) {
                 try {
                     final Result selectedItem = results[selectItemPos];
                     final String phoneNumber = selectedItem.getProperty("Phone");
@@ -257,8 +294,22 @@ class ResultForm implements ActionListener {
                 startIndex = startIndex + resultCount;
                 int endIndex = startIndex + MAX_RESULTS;
                 search(startIndex, endIndex);
-            } else if (commandName.equals("Prev")) {
-            } else if (commandName.equals("First")) {
+            } else if (commandName.equals(OPTION_SORT_BY_RELEVANCE)) {
+                initResults(results);
+            } else if (commandName.equals(OPTION_SORT_BY_CITY)) {
+                sort("City", results, SORT_ORDER_ASCENDING);
+                initProcessedResults(results);
+            } else if (commandName.equals(OPTION_SORT_BY_AREA)) {
+                sort("Area", results, SORT_ORDER_ASCENDING);
+                initProcessedResults(results);
+            } else if (commandName.equals(OPTION_FILTER_BY_VIDEOS)) {
+                filter("VideoName");
+            } else if (commandName.equals(OPTION_EXIT)) {
+                midlet.exit();
+            } else if (commandName.equals(OPTION_HELP)) {
+                uiUtils.showHelp();
+            } else if (commandName.equals(OPTION_HOME)) {
+                goBack();
             }
         } else {
             final int keyEvent = ae.getKeyEvent();
@@ -277,6 +328,10 @@ class ResultForm implements ActionListener {
             System.out.println("Key Pressed - " + keyEvent + " - " + selectItemPos);
         }
         ae.consume();
+    }
+
+    private boolean shouldSwap(String sortOrder, String a, String b) {
+        return (sortOrder.equals(SORT_ORDER_ASCENDING) && a.compareTo(b) < 0) || (sortOrder.equals(SORT_ORDER_DESCENDING) && a.compareTo(b) > 0);
     }
 
     private void showDialog(String message) {
@@ -309,5 +364,43 @@ class ResultForm implements ActionListener {
         filter.setString(new String[]{"", "", "", "", String.valueOf(startIndex), String.valueOf(endIndex)});
         Result[] results = searchService.search(searchBusinessText, searchAreaText, filter);
         initResults(results);
+    }
+
+    private void sort(String sortProperty, Result[] results, String sortOrder) {
+        for (int k = 0; k < results.length - 1; k++) {
+            boolean isSorted = true;
+
+            for (int i = 1; i < results.length - k; i++) {
+                if (shouldSwap(sortOrder, results[i].getProperty(sortProperty), results[i - 1].getProperty(sortProperty))) {
+                    Result tempVariable = results[i];
+                    results[i] = results[i - 1];
+                    results[i - 1] = tempVariable;
+
+                    isSorted = false;
+
+                }
+            }
+
+            if (isSorted) {
+                break;
+            }
+        }
+        for (int i = 0; i < results.length; i++) {
+            System.out.println(results[i].getProperty(sortProperty));
+        }
+
+    }
+
+    private void filter(String filterProperty) {
+        Result[] filteredResults = new Result[MAX_RESULTS];
+        int j = 0;
+        for (int i = 0; i < results.length; i++) {
+            Result result = results[i];
+            if (!uiUtils.isEmpty(result.getProperty(filterProperty))) {
+                filteredResults[j] = result;
+                j++;
+            }
+        }
+        initProcessedResults(filteredResults);
     }
 }

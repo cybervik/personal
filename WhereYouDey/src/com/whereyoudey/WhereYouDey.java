@@ -1,5 +1,6 @@
 package com.whereyoudey;
 
+import com.sun.lwuit.Dialog;
 import java.io.IOException;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.midlet.MIDletStateChangeException;
@@ -57,5 +58,21 @@ public class WhereYouDey extends MIDlet {
 
     private void init() {
         Display.init(this);
+    }
+
+    public void exit() {
+        try {
+            if (userConfirmsExit()) {
+                destroyApp(true);
+                notifyDestroyed();
+            }
+        } catch (MIDletStateChangeException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
+    private boolean userConfirmsExit() {
+        return Dialog.show("Confirm Exit", "Do you really want to exit?", "Ok", "Cancel");
     }
 }
