@@ -356,7 +356,7 @@ public class ResultForm implements ActionListener {
     }
 
     private void search(int startIndex, int endIndex) {
-        final SearchForm searchForm = midlet.getSearchForm();
+        final BusinessSearchForm searchForm = midlet.getSearchForm();
         final String searchBusinessText = searchForm.getSearchBusinessText().trim();
         final String searchAreaText = searchForm.getSearchAreaText().trim();
         SearchService searchService = new SearchService();

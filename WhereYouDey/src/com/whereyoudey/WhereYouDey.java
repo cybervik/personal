@@ -10,15 +10,15 @@ import com.sun.lwuit.Form;
 import com.sun.lwuit.Image;
 import com.sun.lwuit.Label;
 import com.sun.lwuit.layouts.BorderLayout;
-import com.whereyoudey.form.SearchForm;
+import com.whereyoudey.form.BusinessSearchForm;
 
 public class WhereYouDey extends MIDlet {
 
     public static final int FLASH_LOGO_DURATION = 5 * 1000;
-    SearchForm searchForm;
+    BusinessSearchForm searchForm;
     private Form flashForm;
 
-    public SearchForm getSearchForm() {
+    public BusinessSearchForm getSearchForm() {
         return searchForm;
     }
 
@@ -53,7 +53,7 @@ public class WhereYouDey extends MIDlet {
         } catch (IOException ex) {
             ex.printStackTrace();
         }
-        searchForm = new SearchForm(this);
+        searchForm = new BusinessSearchForm(this);
     }
 
     private void init() {

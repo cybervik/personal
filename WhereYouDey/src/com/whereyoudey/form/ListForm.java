@@ -34,7 +34,7 @@ public class ListForm implements ActionListener {
     public ListForm(WhereYouDey midlet, String [] data, TextField associatedField) {
         uiUtils = new UIUtils();
         listForm = new Form();
-        listForm.getStyle().setBgColor(SearchForm.COLOR_BACKGROUND);
+        listForm.getStyle().setBgColor(BusinessSearchForm.COLOR_BACKGROUND);
         listForm.setLayout(new BoxLayout(BoxLayout.Y_AXIS));
         citiesList = new List(data);
         final DefaultListCellRenderer renderer = (DefaultListCellRenderer) citiesList.getRenderer();

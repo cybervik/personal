@@ -28,7 +28,7 @@ import com.sun.lwuit.plaf.Border;
 import com.whereyoudey.WhereYouDey;
 import com.whereyoudey.form.ListForm;
 import com.whereyoudey.form.ResultForm;
-import com.whereyoudey.form.SearchForm;
+import com.whereyoudey.form.BusinessSearchForm;
 import java.io.IOException;
 
 /**
@@ -75,7 +75,7 @@ public class UIUtils {
             public void focusGained(Component cmpnt) {
                 history.setVisible(true);
                 history.repaint();
-                final SearchForm searchForm = midlet.getSearchForm();
+                final BusinessSearchForm searchForm = midlet.getSearchForm();
                 if (searchForm != null) {
                     searchForm.show();
                 }
@@ -85,7 +85,7 @@ public class UIUtils {
             }
 
             public void focusLost(Component cmpnt) {
-                final SearchForm searchForm = midlet.getSearchForm();
+                final BusinessSearchForm searchForm = midlet.getSearchForm();
                 if (searchForm.getFocussed() != history) {
                     history.setVisible(false);
                     history.repaint();
@@ -101,7 +101,7 @@ public class UIUtils {
             }
 
             public void focusLost(Component cmpnt) {
-                final SearchForm searchForm = midlet.getSearchForm();
+                final BusinessSearchForm searchForm = midlet.getSearchForm();
                 history.setVisible(false);
                 history.setFocusable(false);
                 history.repaint();
