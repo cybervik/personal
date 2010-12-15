@@ -1,5 +1,6 @@
 package com.whereyoudey.service;
 
+import com.sun.lwuit.TextField;
 import com.whereyoudey.service.Result;
 import java.io.IOException;
 import java.rmi.RemoteException;
@@ -16,16 +17,14 @@ public class SearchService {
 
     public static final int MAX_RESULTS = 10;
 
-    public Result [] search(String name, String location, ArrayOfString filter) {
-        Search_Stub service = new Search_Stub();
-//		service._setProperty(Stub.ENDPOINT_ADDRESS_PROPERTY, "http://www.whereyoudey.com/WhereyoudeyWebServices/Search.asmx/SearchData");
-//		service._setProperty(Stub.SESSION_MAINTAIN_PROPERTY, new Boolean(true));
-        String resultAsXml = "";
+    public Result[] searchBusinessData(String name, String location, ArrayOfString filter) {
         Result[] result = null;
         try {
-            resultAsXml = getResult(service, name, location, filter);
+            Search_Stub service = new Search_Stub();
+            String[] searchResult = service.SearchData(name, location, filter).getString();
+            String resultAsXml = searchResult[0];
             System.out.println(resultAsXml);
-            result = processResponse(resultAsXml);
+            result = processResponse(resultAsXml, "SearchResults", "Result");
         } catch (XmlPullParserException ex) {
             ex.printStackTrace();
         } catch (IOException ex) {
@@ -34,14 +33,7 @@ public class SearchService {
         return result;
     }
 
-    private String getResult(Search_Stub service, String name, String location, ArrayOfString filter) throws RemoteException {
-        String result;
-        String[] searchResult = service.SearchData(name, location, filter).getString();
-        result = searchResult[0];
-        return result;
-    }
-
-    private Result[] processResponse(String result) throws XmlPullParserException, IOException {
+    private Result[] processResponse(String result, final String rootTag, final String elementTag) throws XmlPullParserException, IOException {
         final byte[] resultBytes = result.getBytes();
         ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(resultBytes);
         InputStreamReader inputStreamReader = new InputStreamReader(byteArrayInputStream);
@@ -49,7 +41,7 @@ public class SearchService {
         parser.setInput(inputStreamReader);
 
         parser.nextTag();
-        parser.require(XmlPullParser.START_TAG, null, "SearchResults");
+        parser.require(XmlPullParser.START_TAG, null, rootTag);
         parser.nextTag();
 
         int eventCode = parser.getEventType();
@@ -65,14 +57,14 @@ public class SearchService {
             switch (parser.getEventType()) {
                 case XmlPullParser.START_TAG:
                     tagName = parser.getName();
-                    if ("Result".equals(tagName)) {
+                    if (elementTag.equals(tagName)) {
                         resultObj = new Result();
                         processingResult = true;
                     }
                     break;
                 case XmlPullParser.END_TAG:
                     tagName = parser.getName();
-                    if ("Result".equals(tagName)) {
+                    if (elementTag.equals(tagName)) {
                         resultList[resultCount] = resultObj;
                         processingResult = false;
                         resultCount++;
@@ -92,5 +84,20 @@ public class SearchService {
             eventCode = parser.getEventType();
         }
         return resultList;
+    }
+
+    public Result[] searchEvents(String city) {
+        Result[] events = new Result[0];
+        try {
+            Search_Stub search_Stub = new Search_Stub();
+            String eventsAsXml = search_Stub.GetCityEvents(city);
+            System.out.println(eventsAsXml);
+            events = processResponse(eventsAsXml, "SearchResults", "Result");
+        } catch (XmlPullParserException ex) {
+            ex.printStackTrace();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+        return events;
     }
 }

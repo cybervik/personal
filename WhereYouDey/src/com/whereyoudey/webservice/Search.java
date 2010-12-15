@@ -1,7 +1,11 @@
 package com.whereyoudey.webservice;
 
-
 public interface Search extends java.rmi.Remote {
+
+    /**
+     *
+     */
+    public String GetCityEvents(String city) throws java.rmi.RemoteException;
 
     /**
      *
@@ -12,6 +16,11 @@ public interface Search extends java.rmi.Remote {
      *
      */
     public String IndexData() throws java.rmi.RemoteException;
+
+    /**
+     *
+     */
+    public String GetCityTheaters(String city) throws java.rmi.RemoteException;
 
     /**
      *

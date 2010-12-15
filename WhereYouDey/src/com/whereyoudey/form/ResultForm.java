@@ -33,7 +33,7 @@ import javax.microedition.io.ConnectionNotFoundException;
  *
  * @author Vikram S
  */
-public class ResultForm implements ActionListener {
+public abstract class ResultForm implements ActionListener {
 
     public static final int COLOR_ADV_BACKGROUND = 0xffa500;
     public static final int COLOR_BLACK = 0x000000;
@@ -51,84 +51,88 @@ public class ResultForm implements ActionListener {
     public static final String OPTION_SORT_BY_RELEVANCE = "Sort by relevance";
     public static final String SORT_ORDER_ASCENDING = "ASC";
     public static final String SORT_ORDER_DESCENDING = "DSC";
-    private WhereYouDey midlet;
-    private Form form;
-    private Result[] results;
+    protected WhereYouDey midlet;
+    protected Form form;
+    protected Result[] results;
     private Label header;
     private Label resultCounter;
     private int selectItemPos = -1;
     private ResultContainer resultContainer;
     private int resultCount;
     private DetailsForm detailsForm;
-    private int startIndex;
     private int MAX_RESULTS = 10;
-    private UIUtils uiUtils;
+    protected UIUtils uiUtils;
+    private final SearchForm callingForm;
 
-    ResultForm(WhereYouDey midlet, Result[] results) {
+    ResultForm(WhereYouDey midlet, Result[] results, SearchForm callingForm) {
         initVariables(midlet);
         initForm();
         addHeader();
         addResultsSection(results);
-        form.addCommand(new Command(OPTION_BACK));
-        form.addCommand(new Command(OPTION_SELECT));
-        form.addCommand(new Command(OPTION_CALL));
-//        form.addCommand(new Command("Next"));
-//        form.addCommand(new Command("Previous"));
-//        form.addCommand(new Command("First"));
-        form.addCommand(new Command(OPTION_SORT_BY_RELEVANCE));
-        form.addCommand(new Command(OPTION_SORT_BY_CITY));
-        form.addCommand(new Command(OPTION_SORT_BY_AREA));
-        form.addCommand(new Command(OPTION_FILTER_BY_VIDEOS));
-        form.addCommand(new Command(OPTION_HELP));
-        form.addCommand(new Command(OPTION_HOME));
-        form.addCommand(new Command(OPTION_EXIT));
-        form.addCommandListener(this);
+        addCommands();
+        this.callingForm = callingForm;
         form.show();
     }
 
-    private DetailsForm getDetailsForm() {
-        if (detailsForm == null) {
-            detailsForm = new DetailsForm(midlet);
+    protected abstract DetailsForm getDetailsForm();
+
+    private void addCommands() {
+        form.addCommand(new Command(OPTION_BACK));
+        form.addCommand(new Command(OPTION_SELECT));
+        form.addCommand(new Command(OPTION_HELP));
+        form.addCommand(new Command(OPTION_HOME));
+        form.addCommand(new Command(OPTION_EXIT));
+        form.addCommand(new Command(OPTION_CALL));
+        form.addCommandListener(this);
+        addFormSpecificCommands();
+    }
+
+    protected abstract void addFormSpecificCommands();
+
+    protected abstract String getPhoneNumberProperty();
+
+    private void handleKeyEventAction(ActionEvent ae) {
+        final int keyEvent = ae.getKeyEvent();
+        switch (keyEvent) {
+            case -1:
+                deSelectItem();
+                selectItemPos = (selectItemPos == 0) ? selectItemPos : selectItemPos - 1;
+                selectItemUp();
+                break;
+            case -2:
+                deSelectItem();
+                selectItemPos = (selectItemPos == (resultCount - 1)) ? selectItemPos : selectItemPos + 1;
+                selectItemDown();
+                break;
         }
+        System.out.println("Key Pressed - " + keyEvent + " - " + selectItemPos);
+    }
+
+    private DetailsForm showDetailsForm(Result result) {
+        if (detailsForm == null) {
+            detailsForm = getDetailsForm();
+        }
+        detailsForm.init(results[selectItemPos]);
         return detailsForm;
     }
 
+    protected abstract String getInitialSortProperty();
+
     private void goBack() {
-        midlet.getSearchForm().show();
+        callingForm.show();
     }
 
-    private void initProcessedResults(Result[] results) throws NumberFormatException {
+    protected void initProcessedResults(Result[] results) throws NumberFormatException {
         this.results = results;
         this.resultCount = 0;
         this.selectItemPos = -1;
         this.resultContainer.removeAll();
-        int reviewCount;
         for (int i = 0; i < results.length; i++) {
             Result result = results[i];
             if (result != null) {
                 resultCount++;
-                String bizName = result.getProperty("Name");
-                final String address = result.getProperty("Address");
-                //                final String street = result.getProperty("Street");
-                //                final String area = result.getProperty("Area");
-                final String city = result.getProperty("City");
-                final String state = result.getProperty("State");
-                final String phone = result.getProperty("Phone");
-                final String ratingStr = result.getProperty("StarReview");
-                final String reviewCountStr = result.getProperty("ReviewCount");
                 Container itemContainer = new Container(new BoxLayout(BoxLayout.Y_AXIS));
-                try {
-                    reviewCount = Integer.parseInt(reviewCountStr);
-                    for (int j = 0; j < reviewCount; j++) {
-                        bizName += "*";
-                    }
-                } catch (Exception e) {
-                }
-                addBoldFontLabel(bizName, itemContainer);
-                addSmallFontLabel(address, itemContainer);
-                addSmallFontLabel(city + ", " + state, itemContainer);
-                addRating(ratingStr, itemContainer);
-                addSmallFontLabel(phone, itemContainer);
+                renderResult(result, itemContainer);
                 if ((resultCount % 3) == 0) {
                     addAdvLabel(itemContainer);
                 }
@@ -140,7 +144,7 @@ public class ResultForm implements ActionListener {
                 itemContainer.getStyle().setBgPainter(new Painter() {
 
                     public void paint(Graphics g, Rectangle r) {
-                        g.setColor(0x000000);
+                        g.setColor(COLOR_BLACK);
                         g.fillRect(r.getX(), r.getY(), r.getSize().getWidth(), 1);
                     }
                 });
@@ -155,10 +159,11 @@ public class ResultForm implements ActionListener {
         form.show();
     }
 
+    protected abstract void renderResult(Result result, Container itemContainer) throws NumberFormatException;
+
     private void initVariables(WhereYouDey midlet) {
         this.midlet = midlet;
         this.selectItemPos = -1;
-        this.startIndex = 1;
         this.uiUtils = new UIUtils();
     }
 
@@ -168,6 +173,7 @@ public class ResultForm implements ActionListener {
         form.setLayout(new BorderLayout());
         form.addKeyListener(-1, this);
         form.addKeyListener(-2, this);
+        form.setScrollableX(true);
     }
 
     private void addHeader() {
@@ -193,24 +199,47 @@ public class ResultForm implements ActionListener {
     }
 
     public void initResults(Result[] results) throws NumberFormatException {
-        sort("ReviewCount", results, SORT_ORDER_DESCENDING);
+        sort(getInitialSortProperty(), results, SORT_ORDER_DESCENDING);
         initProcessedResults(results);
     }
 
     private Container selectItem() {
         Container selectedItem = (Container) resultContainer.getComponentAt(selectItemPos);
         final Component title = selectedItem.getComponentAt(0);
-        title.getStyle().setBgColor(COLOR_SELECTEDITEM_BACKGROUND);
-        title.getStyle().setFgColor(COLOR_BLACK);
         header.setText(((Label) title).getText());
+        selectedItem.getStyle().setBgPainter(new Painter() {
+
+            public void paint(Graphics g, Rectangle r) {
+                g.setColor(COLOR_SELECTEDITEM_BACKGROUND);
+                g.fillRect(r.getX(), r.getY(), r.getSize().getWidth(), r.getSize().getHeight());
+                g.setColor(COLOR_BLACK);
+                g.fillRect(r.getX(), r.getY(), r.getSize().getWidth(), 1);
+            }
+        });
+        for (int i = 0; i < selectedItem.getComponentCount(); i++) {
+            Component item = selectedItem.getComponentAt(i);
+            item.getStyle().setBgColor(COLOR_SELECTEDITEM_BACKGROUND);
+            item.getStyle().setFgColor(COLOR_BLACK);
+        }
         return selectedItem;
     }
 
     private void deSelectItem() {
         Container selectedItem = (Container) resultContainer.getComponentAt(selectItemPos);
-        final Component heading = selectedItem.getComponentAt(0);
-        heading.getStyle().setBgColor(COLOR_WHITE);
-        heading.getStyle().setFgColor(COLOR_BLACK);
+        selectedItem.getStyle().setBgPainter(new Painter() {
+
+            public void paint(Graphics g, Rectangle r) {
+                g.setColor(COLOR_WHITE);
+                g.fillRect(r.getX(), r.getY(), r.getSize().getWidth(), r.getSize().getHeight());
+                g.setColor(COLOR_BLACK);
+                g.fillRect(r.getX(), r.getY(), r.getSize().getWidth(), 1);
+            }
+        });
+        for (int i = 0; i < selectedItem.getComponentCount(); i++) {
+            Component item = selectedItem.getComponentAt(i);
+            item.getStyle().setBgColor(COLOR_WHITE);
+            item.getStyle().setFgColor(COLOR_BLACK);
+        }
     }
 
     private void addAdvLabel(Container listingContainer) {
@@ -222,7 +251,7 @@ public class ResultForm implements ActionListener {
         advLabel.getStyle().setFont(smallFont);
     }
 
-    private void addRating(final String ratingStr, Container listingContainer) throws NumberFormatException {
+    protected void addRating(final String ratingStr, Container listingContainer) throws NumberFormatException {
         int rating = Integer.parseInt(ratingStr);
         Container ratingContainer = new Container(new BoxLayout(BoxLayout.X_AXIS));
         for (int j = 1; j <= rating; j++) {
@@ -236,8 +265,8 @@ public class ResultForm implements ActionListener {
         listingContainer.addComponent(ratingContainer);
     }
 
-    private void addSmallFontLabel(final String address, Container listingContainer) {
-        final Label addrLabel = new Label(address);
+    protected void addSmallFontLabel(final String text, Container listingContainer) {
+        final Label addrLabel = new Label(text);
         Font smallFont = Font.createSystemFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL);
         addrLabel.getStyle().setFont(smallFont);
         addrLabel.getStyle().setMargin(1, 1, 1, 1);
@@ -245,8 +274,8 @@ public class ResultForm implements ActionListener {
         listingContainer.addComponent(addrLabel);
     }
 
-    private void addBoldFontLabel(final String bizName, Container listingContainer) {
-        final Label bizNameLabel = new Label(bizName);
+    protected void addBoldFontLabel(final String text, Container listingContainer) {
+        final Label bizNameLabel = new Label(text);
         Font boldFont = Font.createSystemFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_SMALL);
         bizNameLabel.getStyle().setFont(boldFont);
         listingContainer.addComponent(bizNameLabel);
@@ -268,64 +297,9 @@ public class ResultForm implements ActionListener {
     public void actionPerformed(ActionEvent ae) {
         final Command command = ae.getCommand();
         if (command != null) {
-            final String commandName = command.getCommandName();
-            if (commandName.equals(OPTION_BACK)) {
-                goBack();
-            } else if (commandName.equals(OPTION_SELECT)) {
-                if (selectItemPos == -1) {
-                    showDialog("Please select a result");
-                    return;
-                }
-                DetailsForm detailsForm = getDetailsForm();
-                detailsForm.init(results[selectItemPos]);
-            } else if (commandName.equals(OPTION_CALL)) {
-                try {
-                    final Result selectedItem = results[selectItemPos];
-                    final String phoneNumber = selectedItem.getProperty("Phone");
-                    if (phoneNumber.trim().equals("")) {
-                        showDialog("Phone number not found in this result.");
-                    } else {
-                        midlet.platformRequest("tel:" + phoneNumber);
-                    }
-                } catch (ConnectionNotFoundException ex) {
-                    ex.printStackTrace();
-                }
-            } else if (commandName.equals("Next")) {
-                startIndex = startIndex + resultCount;
-                int endIndex = startIndex + MAX_RESULTS;
-                search(startIndex, endIndex);
-            } else if (commandName.equals(OPTION_SORT_BY_RELEVANCE)) {
-                initResults(results);
-            } else if (commandName.equals(OPTION_SORT_BY_CITY)) {
-                sort("City", results, SORT_ORDER_ASCENDING);
-                initProcessedResults(results);
-            } else if (commandName.equals(OPTION_SORT_BY_AREA)) {
-                sort("Area", results, SORT_ORDER_ASCENDING);
-                initProcessedResults(results);
-            } else if (commandName.equals(OPTION_FILTER_BY_VIDEOS)) {
-                filter("VideoName");
-            } else if (commandName.equals(OPTION_EXIT)) {
-                midlet.exit();
-            } else if (commandName.equals(OPTION_HELP)) {
-                uiUtils.showHelp();
-            } else if (commandName.equals(OPTION_HOME)) {
-                goBack();
-            }
+            handleCommandAction(command);
         } else {
-            final int keyEvent = ae.getKeyEvent();
-            switch (keyEvent) {
-                case -1:
-                    deSelectItem();
-                    selectItemPos = (selectItemPos == 0) ? selectItemPos : selectItemPos - 1;
-                    selectItemUp();
-                    break;
-                case -2:
-                    deSelectItem();
-                    selectItemPos = (selectItemPos == (resultCount - 1)) ? selectItemPos : selectItemPos + 1;
-                    selectItemDown();
-                    break;
-            }
-            System.out.println("Key Pressed - " + keyEvent + " - " + selectItemPos);
+            handleKeyEventAction(ae);
         }
         ae.consume();
     }
@@ -355,23 +329,20 @@ public class ResultForm implements ActionListener {
         form.show();
     }
 
-    private void search(int startIndex, int endIndex) {
-        final BusinessSearchForm searchForm = midlet.getSearchForm();
-        final String searchBusinessText = searchForm.getSearchBusinessText().trim();
-        final String searchAreaText = searchForm.getSearchAreaText().trim();
-        SearchService searchService = new SearchService();
-        ArrayOfString filter = new ArrayOfString();
-        filter.setString(new String[]{"", "", "", "", String.valueOf(startIndex), String.valueOf(endIndex)});
-        Result[] results = searchService.search(searchBusinessText, searchAreaText, filter);
-        initResults(results);
-    }
-
-    private void sort(String sortProperty, Result[] results, String sortOrder) {
+    protected void sort(String sortProperty, Result[] results, String sortOrder) {
         for (int k = 0; k < results.length - 1; k++) {
+            if (results[k] == null) {
+                break;
+            }
             boolean isSorted = true;
 
             for (int i = 1; i < results.length - k; i++) {
-                if (shouldSwap(sortOrder, results[i].getProperty(sortProperty), results[i - 1].getProperty(sortProperty))) {
+                if (results[i] == null) {
+                    break;
+                }
+                String a = results[i].getProperty(sortProperty);
+                String b = results[i - 1].getProperty(sortProperty);
+                if (shouldSwap(sortOrder, a, b)) {
                     Result tempVariable = results[i];
                     results[i] = results[i - 1];
                     results[i - 1] = tempVariable;
@@ -386,12 +357,15 @@ public class ResultForm implements ActionListener {
             }
         }
         for (int i = 0; i < results.length; i++) {
+            if (results[i] == null) {
+                break;
+            }
             System.out.println(results[i].getProperty(sortProperty));
         }
 
     }
 
-    private void filter(String filterProperty) {
+    protected void filter(String filterProperty) {
         Result[] filteredResults = new Result[MAX_RESULTS];
         int j = 0;
         for (int i = 0; i < results.length; i++) {
@@ -402,5 +376,54 @@ public class ResultForm implements ActionListener {
             }
         }
         initProcessedResults(filteredResults);
+    }
+
+    private void handleCommandAction(Command command) {
+        final String commandName = command.getCommandName();
+        if (commandName.equals(OPTION_BACK)) {
+            goBack();
+        } else if (commandName.equals(OPTION_EXIT)) {
+            midlet.exit();
+        } else if (commandName.equals(OPTION_HELP)) {
+            uiUtils.showHelp();
+        } else if (commandName.equals(OPTION_HOME)) {
+            goBack();
+        } else if (commandName.equals(OPTION_SELECT)) {
+            if (selectItemPos == -1) {
+                showDialog("Please select a result");
+                return;
+            }
+            showDetailsForm(results[selectItemPos]);
+        } else if (commandName.equals(OPTION_CALL)) {
+            try {
+                final Result selectedItem = results[selectItemPos];
+                final String phoneNumber = selectedItem.getProperty(getPhoneNumberProperty());
+                if (phoneNumber.trim().equals("")) {
+                    showDialog("Phone number not found in this result.");
+                } else {
+                    midlet.platformRequest("tel:" + phoneNumber);
+                }
+            } catch (ConnectionNotFoundException ex) {
+                ex.printStackTrace();
+            }
+        } else {
+            handleFormSpecificCommandAction(commandName);
+        }
+    }
+
+    protected abstract void handleFormSpecificCommandAction(String commandName);
+
+    protected void show(final String text, Container itemContainer) {
+        show(text, itemContainer, false);
+    }
+
+    protected void show(final String text, Container itemContainer, boolean isBold) {
+        if (!uiUtils.isEmpty(text)) {
+            if (isBold) {
+                addBoldFontLabel(text, itemContainer);
+            } else {
+                addSmallFontLabel(text, itemContainer);
+            }
+        }
     }
 }

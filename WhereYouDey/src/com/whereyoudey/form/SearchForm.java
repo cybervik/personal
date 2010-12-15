@@ -19,6 +19,8 @@ import com.sun.lwuit.layouts.BorderLayout;
 import com.sun.lwuit.layouts.BoxLayout;
 import com.sun.lwuit.plaf.Border;
 import com.whereyoudey.WhereYouDey;
+import com.whereyoudey.service.Result;
+import com.whereyoudey.service.SearchService;
 import com.whereyoudey.utils.UIUtils;
 import javax.microedition.io.ConnectionNotFoundException;
 
@@ -33,6 +35,8 @@ public abstract class SearchForm implements ActionListener, Runnable {
     public static final String FLIGHTS_URL = "http://www.wakanow.com";
     public static final String ICON_NAME_EVENTS = "Events";
     public static final String ICON_NAME_FLIGHTS = "Flights";
+    public static final String ICON_NAME_MOVIES = "Movies";
+    public static final String ICON_NAME_OFFERS = "Offers";
     public static final String ICON_NAME_VIDEOS = "Videos";
     public static final int ICON_WIDTH = 20;
     public static final String LINK_MORE = "More";
@@ -49,10 +53,11 @@ public abstract class SearchForm implements ActionListener, Runnable {
     public static final String VIDEO_URL = "http://www.youtube.com/whereyoudey";
     private static final String[] iconIds = {
         ICON_NAME_VIDEOS,
-        "Offers",
+        ICON_NAME_OFFERS,
         ICON_NAME_EVENTS,
-        "Movies",
-        ICON_NAME_FLIGHTS};
+        ICON_NAME_MOVIES,
+        ICON_NAME_FLIGHTS
+    };
     private static final String[] iconPaths = {
         "/img/icons/VideosIcon.png",
         "/img/icons/OffersIcon.png",
@@ -61,11 +66,14 @@ public abstract class SearchForm implements ActionListener, Runnable {
         "/img/icons/FlightsIcon.png"
     };
     protected static final UIUtils uiUtils = new UIUtils();
+    protected static final SearchService searchService = new SearchService();
     protected String focussed;
     protected Form form;
     protected WhereYouDey midlet;
     protected Container topContainer;
     protected Dialog waitDialog;
+    protected Result[] results;
+    private ResultForm resultForm;
 
     public SearchForm(WhereYouDey midlet) {
         this.midlet = midlet;
@@ -91,7 +99,11 @@ public abstract class SearchForm implements ActionListener, Runnable {
             } else if (LINK_MORE.equals(focussed)) {
                 uiUtils.showDialog("Comming soon...");
             } else if (ICON_NAME_FLIGHTS.equals(focussed)) {
-                requestPlatFormService(FLIGHTS_URL);
+                uiUtils.showDialog("Comming soon...");
+            } else if (ICON_NAME_OFFERS.equals(focussed)) {
+                uiUtils.showDialog("Comming soon...");
+            } else if (ICON_NAME_MOVIES.equals(focussed)) {
+                uiUtils.showDialog("Comming soon...");
             } else if (ICON_NAME_EVENTS.equals(focussed)) {
                 showEventsForm();
             } else {
@@ -100,7 +112,10 @@ public abstract class SearchForm implements ActionListener, Runnable {
         }
     }
 
+    protected abstract ResultForm getResultForm(Result[] results);
+
     private void showEventsForm() {
+        EventsSearchForm eventsForm = new EventsSearchForm(midlet);
     }
 
     private void addIcons() {
@@ -122,7 +137,7 @@ public abstract class SearchForm implements ActionListener, Runnable {
                     }
                 }
             });
-            if (i == 0) {
+            if (i == getSelectedIconPos()) {
                 image.getStyle().setBorder(Border.createBevelRaised());
             }
             image.getSelectedStyle().setBorder(Border.createLineBorder(1));
@@ -156,8 +171,11 @@ public abstract class SearchForm implements ActionListener, Runnable {
         addLogo();
         addIcons();
         addFormFields();
+        setFocus();
         form.addComponent(BorderLayout.NORTH, topContainer);
     }
+
+    protected abstract void setFocus();
 
     private void addMenuActions() {
         form.addCommandListener(this);
@@ -226,10 +244,25 @@ public abstract class SearchForm implements ActionListener, Runnable {
             ex.printStackTrace();
         }
         searchAction();
+        hideWait();
+        showResultForm(results);
+    }
+
+    private void showResultForm(Result[] results) throws NumberFormatException {
+        if (resultForm == null) {
+            resultForm = getResultForm(results);
+        } else {
+            resultForm.initResults(results);
+        }
+    }
+
+    public ResultForm getResultForm() {
+        return resultForm;
     }
 
     public void search() {
         if (!isFormValid()) {
+            uiUtils.showDialog(getFormInvalidMessage());
             return;
         }
         Thread t = new Thread(this);
@@ -244,4 +277,8 @@ public abstract class SearchForm implements ActionListener, Runnable {
     protected abstract boolean isFormValid();
 
     protected abstract void searchAction();
+
+    protected abstract int getSelectedIconPos();
+
+    protected abstract String getFormInvalidMessage();
 }

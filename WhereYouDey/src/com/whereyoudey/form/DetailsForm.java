@@ -19,6 +19,7 @@ import com.sun.lwuit.layouts.BoxLayout;
 import com.whereyoudey.WhereYouDey;
 import com.whereyoudey.service.Result;
 import com.whereyoudey.form.helper.Section;
+import com.whereyoudey.utils.UIUtils;
 import java.io.IOException;
 import javax.microedition.io.ConnectionNotFoundException;
 import javax.microedition.midlet.MIDletStateChangeException;
@@ -27,54 +28,81 @@ import javax.microedition.midlet.MIDletStateChangeException;
  *
  * @author Vikram S
  */
-class DetailsForm implements ActionListener {
+abstract class DetailsForm implements ActionListener {
+    public static final String OPTION_BACK = "Back";
+    public static final String OPTION_CALL = "Call";
+    public static final String OPTION_EXIT = "Exit";
+    public static final String OPTION_HOME = "Home";
 
-    private Form form;
+    protected Form form;
     private Label header;
-    private Label address;
-    private Label phoneNumber;
-    private Container ratingContainer;
     private final WhereYouDey midlet;
-    private final Section hoursOfOperation;
-    private final Section description;
-    private final Section productsInformation;
-    private final Section pricingInformation;
-    private final Section businessCategory;
-    private final Section additionalInformation;
-    private final Section keyWords;
     private Result result;
-    private final Label state;
-    private final Label city;
+    private final ResultForm callingForm;
+    protected UIUtils uiUtils = new UIUtils();
 
-    public DetailsForm(WhereYouDey midlet) {
+    public DetailsForm(WhereYouDey midlet, ResultForm callingForm) {
+        this.midlet = midlet;
+        this.callingForm = callingForm;
+        initForm();
+        addHeader();
+        addFormElements();
+        addCommands();
+        form.show();
+    }
+
+    protected abstract void addFormElements() throws NumberFormatException;
+
+    protected abstract String getHeaderProperty();
+
+    protected abstract String getPhoneProperty();
+
+    private void call() {
+        try {
+            final String phoneNumber = result.getProperty(getPhoneProperty());
+            if ("".equals(phoneNumber.trim())) {
+                showDialog("Phone number not found in this result.");
+            } else {
+                midlet.platformRequest("tel:" + phoneNumber);
+            }
+        } catch (ConnectionNotFoundException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private void exit() {
+        try {
+            midlet.destroyApp(true);
+            midlet.notifyDestroyed();
+        } catch (MIDletStateChangeException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private void goBack() {
+        callingForm.show();
+    }
+
+    private void goHome() {
+        midlet.getSearchForm().show();
+    }
+
+    private void initForm() {
         form = new Form();
         form.setWidth(Display.getInstance().getDisplayWidth());
         form.setLayout(new BoxLayout(BoxLayout.Y_AXIS));
-        addHeader();
-        address = addSmallFontLabel("");
-        city = addSmallFontLabel("");
-        state = addSmallFontLabel("");
-        phoneNumber = addBigFontLabel("");
-        ratingContainer = new Container(new BoxLayout(BoxLayout.X_AXIS));
-        form.addComponent(ratingContainer);
-        addRating("0");
-        hoursOfOperation = new Section(form, "Hours Of Operations", "");
-        description = new Section(form, "DESCRIPTION", "");
-        productsInformation = new Section(form, "Products Information", "");
-        pricingInformation = new Section(form, "Pricing Information", "");
-        businessCategory = new Section(form, "Busienss Category", "");
-        additionalInformation = new Section(form, "Additional Information", "");
-        keyWords = new Section(form, "Keywords", "");
-        form.addCommand(new Command("Back"));
-        form.addCommand(new Command("Exit"));
-        form.addCommand(new Command("Home"));
-        form.addCommand(new Command("Call"));
-        form.addCommandListener(this);
-        form.show();
-        this.midlet = midlet;
+        form.setScrollableX(true);
     }
 
-    private Label addBigFontLabel(final String ph) {
+    private void addCommands() {
+        form.addCommand(new Command(OPTION_BACK));
+        form.addCommand(new Command(OPTION_EXIT));
+        form.addCommand(new Command(OPTION_HOME));
+        form.addCommand(new Command(OPTION_CALL));
+        form.addCommandListener(this);
+    }
+
+    protected Label addBigFontLabel(final String ph) {
         Label phoneNumber = new Label(ph);
         Font bigFont = Font.createSystemFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_LARGE);
         phoneNumber.getStyle().setFont(bigFont);
@@ -83,17 +111,24 @@ class DetailsForm implements ActionListener {
     }
 
     private void addHeader() {
-        header = new Label("Heloo");
+        header = new Label("");
         header.getStyle().setBgColor(0x000000);
         header.getStyle().setFgColor(0xffffff);
         form.addComponent(header);
     }
 
-    private Label addSmallFontLabel(final String txt) {
+    protected Label addSmallFontLabel(final String txt) {
         Label label = new Label(txt);
         setSmallFont(label);
         form.addComponent(label);
         return label;
+    }
+
+    protected abstract void initResult(Result result);
+
+    private void setHeader(Result result) {
+        final String bizName = result.getProperty(getHeaderProperty());
+        header.setText(bizName);
     }
 
     private void setSmallFont(Component comp) {
@@ -101,7 +136,7 @@ class DetailsForm implements ActionListener {
         comp.getStyle().setFont(smallFont);
     }
 
-    private Image getImage(String imagePath, int imageWidth) {
+    protected Image getImage(String imagePath, int imageWidth) {
         Image img = null;
         try {
             img = Image.createImage(imagePath);
@@ -114,83 +149,28 @@ class DetailsForm implements ActionListener {
         return img;
     }
 
-    private void addRating(final String ratingStr) throws NumberFormatException {
-        int rating = Integer.parseInt(ratingStr);
-        ratingContainer.removeAll();
-        for (int j = 1; j <= rating; j++) {
-            Label ratingIcon = new Label(getImage("/img/rating_mark.png", 5));
-            ratingContainer.addComponent(ratingIcon);
-        }
-        for (int j = rating + 1; j <= 5; j++) {
-            Label ratingIcon = new Label(getImage("/img/rating_empty.png", 5));
-            ratingContainer.addComponent(ratingIcon);
-        }
-    }
-
-    void init(Result result) {
+    public void init(Result result) {
         this.result = result;
-        final String bizName = result.getProperty("Name");
-        final String address = result.getProperty("Address");
-        final String street = result.getProperty("Street");
-        final String area = result.getProperty("Area");
-        final String city = result.getProperty("City");
-        final String state = result.getProperty("State");
-        final String phone = result.getProperty("Phone");
-        final String ratingStr = result.getProperty("StarReview");
-        final String description = result.getProperty("Description");
-        final String category = result.getProperty("Category");
-        final String business = result.getProperty("Business");
-        final String prodServices = result.getProperty("ProdServices");
-        final String keyWords = result.getProperty("KeyWords");
-        header.setText(bizName);
-        this.address.setText(address);
-        this.city.setText(city);
-        this.state.setText(state);
-        this.phoneNumber.setText(phone);
-        addRating(ratingStr);
-        this.description.setDetails(description);
-        this.businessCategory.setDetails(category);
-        this.productsInformation.setDetails(prodServices);
-        this.keyWords.setDetails(keyWords);
-        this.additionalInformation.setDetails(business);
+        setHeader(result);
+        initResult(result);
         form.show();
     }
 
     public void actionPerformed(ActionEvent ae) {
         final Command command = ae.getCommand();
         final String commandName = command.getCommandName();
-        if ("Exit".equals(commandName)) {
-            try {
-                midlet.destroyApp(true);
-                midlet.notifyDestroyed();
-            } catch (MIDletStateChangeException ex) {
-                ex.printStackTrace();
-            }
-        } else if ("Home".equals(commandName)) {
-            midlet.getSearchForm().show();
-        } else if ("Call".equals(commandName)) {
-            try {
-                if (result == null) {
-                    showDialog("No data found");
-                    return;
-                }
-                final String phoneNumber = result.getProperty("Phone");
-                if ("".equals(phoneNumber.trim())) {
-                    showDialog("Phone number not found in this result.");
-                } else {
-                    midlet.platformRequest("tel:" + phoneNumber);
-                }
-            } catch (ConnectionNotFoundException ex) {
-                ex.printStackTrace();
-            }
-        } else if ("Back".equals(commandName)) {
-            midlet.getSearchForm().getResultForm().show();
+        if (OPTION_EXIT.equals(commandName)) {
+            exit();
+        } else if (OPTION_HOME.equals(commandName)) {
+            goHome();
+        } else if (OPTION_CALL.equals(commandName)) {
+            call();
+        } else if (OPTION_BACK.equals(commandName)) {
+            goBack();
         }
     }
 
     private void showDialog(String message) {
-        Dialog invalidPhoneWarning = new Dialog();
-        invalidPhoneWarning.setWidth(form.getWidth());
-        invalidPhoneWarning.show(null, message, "Ok", null);
+        Dialog.show(null, message, "Ok", null);
     }
 }

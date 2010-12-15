@@ -1,21 +1,19 @@
 package com.whereyoudey.form;
 
 import com.sun.lwuit.Component;
-
-
 import com.sun.lwuit.Label;
 import com.sun.lwuit.TextField;
 import com.sun.lwuit.events.FocusListener;
 import com.whereyoudey.WhereYouDey;
 import com.whereyoudey.service.Result;
 import com.whereyoudey.service.SearchService;
+import com.whereyoudey.utils.TextFieldWithHistory;
 import com.whereyoudey.webservice.ArrayOfString;
 
 public class BusinessSearchForm extends SearchForm {
 
-    private ResultForm resultForm;
-    private TextField business;
-    private TextField area;
+    private TextFieldWithHistory business;
+    private TextFieldWithHistory area;
     private ListForm cityOptionsform;
 
     public BusinessSearchForm(WhereYouDey midlet) {
@@ -24,36 +22,22 @@ public class BusinessSearchForm extends SearchForm {
 
     private void createCitiesOptionsForm() {
         if (cityOptionsform == null) {
-            cityOptionsform = new ListForm(midlet, ListForm.CITIES, area);
+            cityOptionsform = new ListForm(midlet, ListForm.CITIES, area.getInnerRepresentation());
         }
     }
 
     protected boolean isFormValid() {
-        String businessText = getSearchBusinessText();
-        if (uiUtils.isEmpty(businessText)) {
-            uiUtils.showDialog("Please enter business to search");
-            return false;
-        }
-        return true;
+        return !uiUtils.isEmpty(getSearchBusinessText());
     }
 
     protected void searchAction() {
         String businessText = getSearchBusinessText();
         String areaText = getSearchAreaText();
-        SearchService searchService = new SearchService();
         ArrayOfString filter = new ArrayOfString();
         filter.setString(new String[]{"", "", "", "", "0", "10"});
-        Result[] results = searchService.search(businessText, areaText, filter);
-        hideWait();
-        showResultForm(results);
-    }
-
-    private void showResultForm(Result[] results) throws NumberFormatException {
-        if (resultForm == null) {
-            resultForm = new ResultForm(midlet, results);
-        } else {
-            resultForm.initResults(results);
-        }
+        results = searchService.searchBusinessData(businessText, areaText, filter);
+        business.updateHistory();
+        area.updateHistory();
     }
 
     protected void addFormFields() {
@@ -63,12 +47,11 @@ public class BusinessSearchForm extends SearchForm {
     }
 
     private void addAreaTextField() {
-        area = uiUtils.addTextFieldWithLabel(midlet, topContainer, "Area/City/State");
+        area = uiUtils.addTextFieldWithLabel(topContainer, "Area/City/State");
     }
 
     private void addBusinessTextField() {
-        business = uiUtils.addTextFieldWithLabel(midlet, topContainer, "Businesses or Keywords");
-        form.setFocused(business);
+        business = uiUtils.addTextFieldWithLabel(topContainer, "Businesses or Keywords");
     }
 
     private void addSelectCityLink() {
@@ -99,15 +82,27 @@ public class BusinessSearchForm extends SearchForm {
         }
     }
 
-    public ResultForm getResultForm() {
-        return resultForm;
-    }
-
     public String getSearchBusinessText() {
         return this.business.getText().trim();
     }
 
     public String getSearchAreaText() {
         return this.area.getText().trim();
+    }
+
+    protected int getSelectedIconPos() {
+        return 0;
+    }
+
+    protected void setFocus() {
+        form.setFocused(business.getInnerRepresentation());
+    }
+
+    protected String getFormInvalidMessage() {
+        return "Please enter business to search";
+    }
+
+    protected ResultForm getResultForm(Result[] results) {
+        return new BusinessResultsForm(midlet, results, this);
     }
 }

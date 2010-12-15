@@ -57,6 +57,28 @@ public class Search_Stub implements Search, javax.xml.rpc.Stub {
         }
     }
 
+    public String GetCityEvents(String city) throws java.rmi.RemoteException {
+        Object inputObject[] = new Object[] {
+            city
+        };
+
+        Operation op = Operation.newInstance( _qname_operation_GetCityEvents, _type_GetCityEvents, _type_GetCityEventsResponse );
+        _prepOperation( op );
+        op.setProperty( Operation.SOAPACTION_URI_PROPERTY, "http://www.WhereYouDey.com/WhereYouDeyWebServices/Search.asmx/GetCityEvents" );
+        Object resultObj;
+        try {
+            resultObj = op.invoke( inputObject );
+        } catch( JAXRPCException e ) {
+            Throwable cause = e.getLinkedCause();
+            if( cause instanceof java.rmi.RemoteException ) {
+                throw (java.rmi.RemoteException) cause;
+            }
+            throw e;
+        }
+
+        return (String )((Object[])resultObj)[0];
+    }
+
     public ArrayOfString SearchData_Ex(String locationID) throws java.rmi.RemoteException {
         Object inputObject[] = new Object[] {
             locationID
@@ -86,6 +108,28 @@ public class Search_Stub implements Search, javax.xml.rpc.Stub {
         Operation op = Operation.newInstance( _qname_operation_IndexData, _type_IndexData, _type_IndexDataResponse );
         _prepOperation( op );
         op.setProperty( Operation.SOAPACTION_URI_PROPERTY, "http://www.WhereYouDey.com/WhereYouDeyWebServices/Search.asmx/IndexData" );
+        Object resultObj;
+        try {
+            resultObj = op.invoke( inputObject );
+        } catch( JAXRPCException e ) {
+            Throwable cause = e.getLinkedCause();
+            if( cause instanceof java.rmi.RemoteException ) {
+                throw (java.rmi.RemoteException) cause;
+            }
+            throw e;
+        }
+
+        return (String )((Object[])resultObj)[0];
+    }
+
+    public String GetCityTheaters(String city) throws java.rmi.RemoteException {
+        Object inputObject[] = new Object[] {
+            city
+        };
+
+        Operation op = Operation.newInstance( _qname_operation_GetCityTheaters, _type_GetCityTheaters, _type_GetCityTheatersResponse );
+        _prepOperation( op );
+        op.setProperty( Operation.SOAPACTION_URI_PROPERTY, "http://www.WhereYouDey.com/WhereYouDeyWebServices/Search.asmx/GetCityTheaters" );
         Object resultObj;
         try {
             resultObj = op.invoke( inputObject );
@@ -139,27 +183,43 @@ public class Search_Stub implements Search, javax.xml.rpc.Stub {
     }
 
     protected static final QName _qname_operation_SearchData_Ex = new QName( "http://www.WhereYouDey.com/WhereYouDeyWebServices/Search.asmx", "SearchData_Ex" );
+    protected static final QName _qname_operation_GetCityEvents = new QName( "http://www.WhereYouDey.com/WhereYouDeyWebServices/Search.asmx", "GetCityEvents" );
     protected static final QName _qname_operation_SearchData = new QName( "http://www.WhereYouDey.com/WhereYouDeyWebServices/Search.asmx", "SearchData" );
+    protected static final QName _qname_operation_GetCityTheaters = new QName( "http://www.WhereYouDey.com/WhereYouDeyWebServices/Search.asmx", "GetCityTheaters" );
     protected static final QName _qname_operation_IndexData = new QName( "http://www.WhereYouDey.com/WhereYouDeyWebServices/Search.asmx", "IndexData" );
+    protected static final QName _qname_GetCityEvents = new QName( "http://www.WhereYouDey.com/WhereYouDeyWebServices/Search.asmx", "GetCityEvents" );
     protected static final QName _qname_SearchData_Ex = new QName( "http://www.WhereYouDey.com/WhereYouDeyWebServices/Search.asmx", "SearchData_Ex" );
     protected static final QName _qname_SearchData_ExResponse = new QName( "http://www.WhereYouDey.com/WhereYouDeyWebServices/Search.asmx", "SearchData_ExResponse" );
+    protected static final QName _qname_GetCityEventsResponse = new QName( "http://www.WhereYouDey.com/WhereYouDeyWebServices/Search.asmx", "GetCityEventsResponse" );
+    protected static final QName _qname_GetCityTheatersResponse = new QName( "http://www.WhereYouDey.com/WhereYouDeyWebServices/Search.asmx", "GetCityTheatersResponse" );
     protected static final QName _qname_SearchDataResponse = new QName( "http://www.WhereYouDey.com/WhereYouDeyWebServices/Search.asmx", "SearchDataResponse" );
     protected static final QName _qname_SearchData = new QName( "http://www.WhereYouDey.com/WhereYouDeyWebServices/Search.asmx", "SearchData" );
     protected static final QName _qname_IndexDataResponse = new QName( "http://www.WhereYouDey.com/WhereYouDeyWebServices/Search.asmx", "IndexDataResponse" );
+    protected static final QName _qname_GetCityTheaters = new QName( "http://www.WhereYouDey.com/WhereYouDeyWebServices/Search.asmx", "GetCityTheaters" );
     protected static final QName _qname_IndexData = new QName( "http://www.WhereYouDey.com/WhereYouDeyWebServices/Search.asmx", "IndexData" );
     protected static final Element _type_SearchDataResponse;
-    protected static final Element _type_SearchData;
-    protected static final Element _type_SearchData_ExResponse;
+    protected static final Element _type_IndexData;
     protected static final Element _type_IndexDataResponse;
     protected static final Element _type_SearchData_Ex;
-    protected static final Element _type_IndexData;
+    protected static final Element _type_GetCityTheaters;
+    protected static final Element _type_GetCityTheatersResponse;
+    protected static final Element _type_GetCityEventsResponse;
+    protected static final Element _type_SearchData_ExResponse;
+    protected static final Element _type_SearchData;
+    protected static final Element _type_GetCityEvents;
 
     static {
         _type_SearchData_Ex = new Element( _qname_SearchData_Ex, _complexType( new Element[] {
             new Element( new QName( "http://www.WhereYouDey.com/WhereYouDeyWebServices/Search.asmx", "locationID" ), Type.STRING, 0, 1, false )}), 1, 1, false );
+        _type_GetCityEvents = new Element( _qname_GetCityEvents, _complexType( new Element[] {
+            new Element( new QName( "http://www.WhereYouDey.com/WhereYouDeyWebServices/Search.asmx", "city" ), Type.STRING, 0, 1, false )}), 1, 1, false );
         _type_SearchData_ExResponse = new Element( _qname_SearchData_ExResponse, _complexType( new Element[] {
             new Element( new QName( "http://www.WhereYouDey.com/WhereYouDeyWebServices/Search.asmx", "SearchData_ExResult" ), _complexType( new Element[] {
                 new Element( new QName( "http://www.WhereYouDey.com/WhereYouDeyWebServices/Search.asmx", "string" ), Type.STRING, 0, Element.UNBOUNDED, true )}))}), 1, 1, false );
+        _type_GetCityEventsResponse = new Element( _qname_GetCityEventsResponse, _complexType( new Element[] {
+            new Element( new QName( "http://www.WhereYouDey.com/WhereYouDeyWebServices/Search.asmx", "GetCityEventsResult" ), Type.STRING, 0, 1, false )}), 1, 1, false );
+        _type_GetCityTheatersResponse = new Element( _qname_GetCityTheatersResponse, _complexType( new Element[] {
+            new Element( new QName( "http://www.WhereYouDey.com/WhereYouDeyWebServices/Search.asmx", "GetCityTheatersResult" ), Type.STRING, 0, 1, false )}), 1, 1, false );
         _type_SearchDataResponse = new Element( _qname_SearchDataResponse, _complexType( new Element[] {
             new Element( new QName( "http://www.WhereYouDey.com/WhereYouDeyWebServices/Search.asmx", "SearchDataResult" ), _complexType( new Element[] {
                 new Element( new QName( "http://www.WhereYouDey.com/WhereYouDeyWebServices/Search.asmx", "string" ), Type.STRING, 0, Element.UNBOUNDED, true )}))}), 1, 1, false );
@@ -170,6 +230,8 @@ public class Search_Stub implements Search, javax.xml.rpc.Stub {
                 new Element( new QName( "http://www.WhereYouDey.com/WhereYouDeyWebServices/Search.asmx", "string" ), Type.STRING, 0, Element.UNBOUNDED, true )}))}), 1, 1, false );
         _type_IndexDataResponse = new Element( _qname_IndexDataResponse, _complexType( new Element[] {
             new Element( new QName( "http://www.WhereYouDey.com/WhereYouDeyWebServices/Search.asmx", "IndexDataResult" ), Type.STRING, 0, 1, false )}), 1, 1, false );
+        _type_GetCityTheaters = new Element( _qname_GetCityTheaters, _complexType( new Element[] {
+            new Element( new QName( "http://www.WhereYouDey.com/WhereYouDeyWebServices/Search.asmx", "city" ), Type.STRING, 0, 1, false )}), 1, 1, false );
         _type_IndexData = new Element( _qname_IndexData, _complexType( new Element[] {
         }), 1, 1, false );
     }

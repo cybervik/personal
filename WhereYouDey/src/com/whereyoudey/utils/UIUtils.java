@@ -19,7 +19,9 @@ import com.sun.lwuit.List;
 import com.sun.lwuit.TextField;
 import com.sun.lwuit.events.ActionEvent;
 import com.sun.lwuit.events.ActionListener;
+import com.sun.lwuit.events.DataChangedListener;
 import com.sun.lwuit.events.FocusListener;
+import com.sun.lwuit.events.SelectionListener;
 import com.sun.lwuit.layouts.BoxLayout;
 import com.sun.lwuit.layouts.CoordinateLayout;
 import com.sun.lwuit.layouts.FlowLayout;
@@ -30,6 +32,7 @@ import com.whereyoudey.form.ListForm;
 import com.whereyoudey.form.ResultForm;
 import com.whereyoudey.form.BusinessSearchForm;
 import java.io.IOException;
+import java.util.Vector;
 
 /**
  *
@@ -41,98 +44,17 @@ public class UIUtils {
         Dialog.show(null, message, null, "Ok");
     }
 
-    public TextField addTextFieldWithLabel(final WhereYouDey midlet, final Container topContainer, String labelText) {
-        addBoldFontLabel(topContainer, labelText);
-        final TextField textField = new TextField();
-        Font plainMediumFont = getFont(Font.STYLE_PLAIN, Font.SIZE_MEDIUM);
-        textField.getStyle().setFont(plainMediumFont);
-        textField.getSelectedStyle().setFont(plainMediumFont);
-        final int displayWidth = Display.getInstance().getDisplayWidth();
-        textField.setPreferredW(displayWidth);
-        textField.setX(0);
-        textField.setY(0);
-        final int textFieldHeight = textField.getPreferredH();
-        Container textFieldContainer = new Container(new CoordinateLayout(displayWidth, 60));
-        textFieldContainer.addComponent(textField);
-        String[] data = {"india", "Us"};
-        final List history = new List(data);
-        history.setX(0);
-        history.setY(21);
-        history.setPreferredH(40);
-        history.setVisible(false);
-        final DefaultListCellRenderer renderer = (DefaultListCellRenderer) history.getRenderer();
-        renderer.setShowNumbers(false);
-        renderer.getSelectedStyle().setBgColor(ResultForm.COLOR_SELECTEDITEM_BACKGROUND);
-        renderer.getSelectedStyle().setFgColor(ResultForm.COLOR_BLACK);
-        Font smallFont = getFont(Font.STYLE_PLAIN, Font.SIZE_SMALL);
-        Font smallBoldFont = getFont(Font.STYLE_BOLD, Font.SIZE_SMALL);
-        renderer.getStyle().setFont(smallFont);
-        renderer.getSelectedStyle().setFont(smallBoldFont);
-        renderer.setSmoothScrolling(false);
-        textFieldContainer.addComponent(history);
-        textField.addFocusListener(new FocusListener() {
-
-            public void focusGained(Component cmpnt) {
-                history.setVisible(true);
-                history.repaint();
-                final BusinessSearchForm searchForm = midlet.getSearchForm();
-                if (searchForm != null) {
-                    searchForm.show();
-                }
-                history.setFocusable(true);
-                cmpnt.setNextFocusDown(history);
-
-            }
-
-            public void focusLost(Component cmpnt) {
-                final BusinessSearchForm searchForm = midlet.getSearchForm();
-                if (searchForm.getFocussed() != history) {
-                    history.setVisible(false);
-                    history.repaint();
-                    if (searchForm != null) {
-                        searchForm.show();
-                    }
-                }
-            }
-        });
-        history.addFocusListener(new FocusListener() {
-
-            public void focusGained(Component cmpnt) {
-            }
-
-            public void focusLost(Component cmpnt) {
-                final BusinessSearchForm searchForm = midlet.getSearchForm();
-                history.setVisible(false);
-                history.setFocusable(false);
-                history.repaint();
-                if (searchForm != null) {
-                    searchForm.show();
-                }
-            }
-        });
-//        final Button historyButton = new Button("abc");
-//        historyButton.addActionListener(new ActionListener() {
-//            private ListForm listForm;
-//
-//            public void actionPerformed(ActionEvent ae) {
-//                String[] data = {"india", "Us"};
-//                if (listForm == null) {
-//                    listForm = new ListForm(midlet, data, textField);
-//                } else {
-//                    listForm.show();
-//                }
-//            }
-//        });
-//        textFieldContainer.addComponent(historyButton);
-        topContainer.addComponent(textFieldContainer);
-        return textField;
+    public TextFieldWithHistory addTextFieldWithLabel(final Container container, String labelText) {
+        addBoldFontLabel(container, labelText);
+        TextFieldWithHistory textFieldWithHistory = new TextFieldWithHistory(container);
+        return textFieldWithHistory;
     }
 
-    public void addBoldFontLabel(Container topContainer, String labelText) {
+    public void addBoldFontLabel(Container container, String labelText) {
         Label label = new Label(labelText);
         Font boldMediumSizeFont = getFont(Font.STYLE_BOLD, Font.SIZE_MEDIUM);
         label.getStyle().setFont(boldMediumSizeFont);
-        topContainer.addComponent(label);
+        container.addComponent(label);
     }
 
     public Label getLink(String linkText) {
@@ -182,5 +104,11 @@ public class UIUtils {
 
     public void showHelp() {
         showDialog("Please conatct: support@whereyoudey.com");
+    }
+
+    public String getCommaSepFormat(final String val1, final String val2) {
+        return (!isEmpty(val1) && !isEmpty(val2)
+                ? val1 + ", " + val2
+                : (!isEmpty(val1) ? val1 : val2));
     }
 }
