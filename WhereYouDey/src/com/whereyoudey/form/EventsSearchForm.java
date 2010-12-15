@@ -16,7 +16,7 @@ import com.whereyoudey.utils.TextFieldWithHistory;
  */
 class EventsSearchForm extends SearchForm {
 
-    private TextFieldWithHistory city;
+    private TextField city;
 
     EventsSearchForm(WhereYouDey midlet) {
         super(midlet);
@@ -25,7 +25,7 @@ class EventsSearchForm extends SearchForm {
     protected void addFormFields() {
         uiUtils.addBoldFontLabel(topContainer, "Search Events");
         city = uiUtils.addTextFieldWithLabel(topContainer, "City");
-        city.setText("Port Harcourt");
+//        city.setText("Port Harcourt");
     }
 
     protected void moreActionPerformed() {
@@ -37,7 +37,6 @@ class EventsSearchForm extends SearchForm {
 
     protected void searchAction() {
         results = searchService.searchEvents(city.getText().trim());
-        city.updateHistory();
     }
 
     protected int getSelectedIconPos() {
@@ -45,7 +44,7 @@ class EventsSearchForm extends SearchForm {
     }
 
     protected void setFocus() {
-        form.setFocused(city.getInnerRepresentation());
+        form.setFocused(city);
     }
 
     protected String getFormInvalidMessage() {

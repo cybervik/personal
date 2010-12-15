@@ -44,10 +44,20 @@ public class UIUtils {
         Dialog.show(null, message, null, "Ok");
     }
 
-    public TextFieldWithHistory addTextFieldWithLabel(final Container container, String labelText) {
+    public TextFieldWithHistory addTextFieldWithLabelAndHistory(final Container container, String labelText) {
         addBoldFontLabel(container, labelText);
         TextFieldWithHistory textFieldWithHistory = new TextFieldWithHistory(container);
         return textFieldWithHistory;
+    }
+
+    public TextField addTextFieldWithLabel(final Container container, String labelText) {
+        addBoldFontLabel(container, labelText);
+        TextField textField = new TextField();
+        Font plainMediumFont = getFont(Font.STYLE_PLAIN, Font.SIZE_MEDIUM);
+        textField.getStyle().setFont(plainMediumFont);
+        textField.getSelectedStyle().setFont(plainMediumFont);
+        container.addComponent(textField);
+        return textField;
     }
 
     public void addBoldFontLabel(Container container, String labelText) {

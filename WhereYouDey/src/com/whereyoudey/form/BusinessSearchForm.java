@@ -12,8 +12,8 @@ import com.whereyoudey.webservice.ArrayOfString;
 
 public class BusinessSearchForm extends SearchForm {
 
-    private TextFieldWithHistory business;
-    private TextFieldWithHistory area;
+    private TextField business;
+    private TextField area;
     private ListForm cityOptionsform;
 
     public BusinessSearchForm(WhereYouDey midlet) {
@@ -22,7 +22,7 @@ public class BusinessSearchForm extends SearchForm {
 
     private void createCitiesOptionsForm() {
         if (cityOptionsform == null) {
-            cityOptionsform = new ListForm(midlet, ListForm.CITIES, area.getInnerRepresentation());
+            cityOptionsform = new ListForm(midlet, ListForm.CITIES, area);
         }
     }
 
@@ -36,8 +36,6 @@ public class BusinessSearchForm extends SearchForm {
         ArrayOfString filter = new ArrayOfString();
         filter.setString(new String[]{"", "", "", "", "0", "10"});
         results = searchService.searchBusinessData(businessText, areaText, filter);
-        business.updateHistory();
-        area.updateHistory();
     }
 
     protected void addFormFields() {
@@ -95,7 +93,7 @@ public class BusinessSearchForm extends SearchForm {
     }
 
     protected void setFocus() {
-        form.setFocused(business.getInnerRepresentation());
+        form.setFocused(business);
     }
 
     protected String getFormInvalidMessage() {
