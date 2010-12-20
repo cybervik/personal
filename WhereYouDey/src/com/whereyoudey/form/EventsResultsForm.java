@@ -4,11 +4,12 @@
  */
 package com.whereyoudey.form;
 
+import com.whereyoudey.utils.SortUtil;
 import com.sun.lwuit.Command;
 import com.sun.lwuit.Container;
 import com.whereyoudey.WhereYouDey;
-import com.whereyoudey.service.Result;
-import com.whereyoudey.utils.UIUtils;
+import com.whereyoudey.service.helper.Result;
+import com.whereyoudey.utils.UiUtil;
 
 /**
  *
@@ -36,17 +37,17 @@ public class EventsResultsForm extends ResultForm {
         final String telephone1 = result.getProperty("Telephone1");
         final String telephone2 = result.getProperty("Telephone2");
         setPrimaryPhoneProperty(telephone1, telephone2);
-        show(eventName, itemContainer, true);
-        show(date, itemContainer);
-        show(uiUtils.getCommaSepFormat(street, area), itemContainer);
-        show(uiUtils.getCommaSepFormat(city, state), itemContainer);
-        show(uiUtils.getCommaSepFormat(telephone1, telephone2), itemContainer);
+        UiUtil.add(itemContainer, eventName, true);
+        UiUtil.add(itemContainer, date);
+        UiUtil.add(itemContainer, UiUtil.getCommaSepFormat(street, area));
+        UiUtil.add(itemContainer, UiUtil.getCommaSepFormat(city, state));
+        UiUtil.add(itemContainer, UiUtil.getCommaSepFormat(telephone1, telephone2));
     }
 
 
 
     private void setPrimaryPhoneProperty(final String telephone1, final String telephone2) {
-        primaryPhoneProperty = (uiUtils.isEmpty(telephone1) ? "Telephone2" : "Telephone1");
+        primaryPhoneProperty = (UiUtil.isEmpty(telephone1) ? "Telephone2" : "Telephone1");
     }
 
     protected void addFormSpecificCommands() {
@@ -59,7 +60,7 @@ public class EventsResultsForm extends ResultForm {
 
     protected void handleFormSpecificCommandAction(String commandName) {
         if (commandName.equals(OPTION_SORT_BY_AREA)) {
-            sort("Area", results, SORT_ORDER_ASCENDING);
+            SortUtil.sort("Area", results, SortUtil.SORT_ORDER_ASCENDING);
             initProcessedResults(results);
         }
     }

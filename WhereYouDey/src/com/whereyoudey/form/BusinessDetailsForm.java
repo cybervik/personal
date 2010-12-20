@@ -8,8 +8,8 @@ import com.sun.lwuit.Container;
 import com.sun.lwuit.Label;
 import com.sun.lwuit.layouts.BoxLayout;
 import com.whereyoudey.WhereYouDey;
-import com.whereyoudey.form.helper.Section;
-import com.whereyoudey.service.Result;
+import com.whereyoudey.form.component.Section;
+import com.whereyoudey.service.helper.Result;
 
 /**
  *
@@ -54,7 +54,7 @@ public class BusinessDetailsForm extends DetailsForm {
         description = new Section(form, "DESCRIPTION", "");
         productsInformation = new Section(form, "Products Information", "");
         pricingInformation = new Section(form, "Pricing Information", "");
-        businessCategory = new Section(form, "Busienss Category", "");
+        businessCategory = new Section(form, "Business Category", "");
         additionalInformation = new Section(form, "Additional Information", "");
         keyWords = new Section(form, "Keywords", "");
     }

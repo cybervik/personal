@@ -1,7 +1,7 @@
 package com.whereyoudey.service;
 
 import com.sun.lwuit.TextField;
-import com.whereyoudey.service.Result;
+import com.whereyoudey.service.helper.Result;
 import java.io.IOException;
 import java.rmi.RemoteException;
 

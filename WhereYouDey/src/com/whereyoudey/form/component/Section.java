@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.whereyoudey.form.helper;
+package com.whereyoudey.form.component;
 
 import com.sun.lwuit.Container;
 import com.sun.lwuit.Display;

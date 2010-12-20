@@ -4,10 +4,12 @@
  */
 package com.whereyoudey.form;
 
+import com.whereyoudey.utils.SortUtil;
 import com.sun.lwuit.Command;
 import com.sun.lwuit.Container;
 import com.whereyoudey.WhereYouDey;
-import com.whereyoudey.service.Result;
+import com.whereyoudey.service.helper.Result;
+import com.whereyoudey.utils.UiUtil;
 
 /**
  *
@@ -38,11 +40,11 @@ public class BusinessResultsForm extends ResultForm {
             }
         } catch (Exception e) {
         }
-        addBoldFontLabel(bizName, itemContainer);
-        addSmallFontLabel(address, itemContainer);
-        addSmallFontLabel(city + ", " + state, itemContainer);
-        addRating(ratingStr, itemContainer);
-        addSmallFontLabel(phone, itemContainer);
+        UiUtil.addBoldSmallFontLabel(itemContainer, bizName);
+        UiUtil.addSmallFontLabel(itemContainer, address);
+        UiUtil.addSmallFontLabel(itemContainer, city + ", " + state);
+        UiUtil.addSmallFontLabel(itemContainer, phone);
+        UiUtil.addRating(itemContainer, ratingStr);
     }
 
     protected void addFormSpecificCommands() {
@@ -60,10 +62,10 @@ public class BusinessResultsForm extends ResultForm {
         if (commandName.equals(OPTION_SORT_BY_RELEVANCE)) {
             initResults(results);
         } else if (commandName.equals(OPTION_SORT_BY_CITY)) {
-            sort("City", results, SORT_ORDER_ASCENDING);
+            SortUtil.sort("City", results, SortUtil.SORT_ORDER_ASCENDING);
             initProcessedResults(results);
         } else if (commandName.equals(OPTION_SORT_BY_AREA)) {
-            sort("Area", results, SORT_ORDER_ASCENDING);
+            SortUtil.sort("Area", results, SortUtil.SORT_ORDER_ASCENDING);
             initProcessedResults(results);
         } else if (commandName.equals(OPTION_FILTER_BY_VIDEOS)) {
             filter("VideoName");

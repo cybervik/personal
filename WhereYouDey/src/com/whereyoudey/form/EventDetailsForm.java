@@ -6,9 +6,9 @@ package com.whereyoudey.form;
 
 import com.sun.lwuit.Label;
 import com.whereyoudey.WhereYouDey;
-import com.whereyoudey.form.helper.Section;
-import com.whereyoudey.service.Result;
-import com.whereyoudey.utils.UIUtils;
+import com.whereyoudey.form.component.Section;
+import com.whereyoudey.service.helper.Result;
+import com.whereyoudey.utils.UiUtil;
 
 /**
  *
@@ -66,15 +66,15 @@ public class EventDetailsForm extends DetailsForm {
         setPrimaryPhoneProperty(telephone1, telephone2);
         this.date.setText(date);
         this.venue.setText(venue);
-        address1.setText(uiUtils.getCommaSepFormat(street, area));
-        address2.setText(uiUtils.getCommaSepFormat(city, state));
-        telephone.setText(uiUtils.getCommaSepFormat(telephone1, telephone2));
+        address1.setText(UiUtil.getCommaSepFormat(street, area));
+        address2.setText(UiUtil.getCommaSepFormat(city, state));
+        telephone.setText(UiUtil.getCommaSepFormat(telephone1, telephone2));
         this.website.setText(website);
         this.keywords.setDetails(keywords);
         this.description.setDetails(description);
     }
 
     private void setPrimaryPhoneProperty(final String telephone1, final String telephone2) {
-        primaryPhoneProperty = (uiUtils.isEmpty(telephone1) ? "Telephone2" : "Telephone1");
+        primaryPhoneProperty = (UiUtil.isEmpty(telephone1) ? "Telephone2" : "Telephone1");
     }
 }

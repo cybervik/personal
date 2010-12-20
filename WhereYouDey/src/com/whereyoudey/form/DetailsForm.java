@@ -17,9 +17,9 @@ import com.sun.lwuit.events.ActionEvent;
 import com.sun.lwuit.events.ActionListener;
 import com.sun.lwuit.layouts.BoxLayout;
 import com.whereyoudey.WhereYouDey;
-import com.whereyoudey.service.Result;
-import com.whereyoudey.form.helper.Section;
-import com.whereyoudey.utils.UIUtils;
+import com.whereyoudey.service.helper.Result;
+import com.whereyoudey.form.component.Section;
+import com.whereyoudey.utils.UiUtil;
 import java.io.IOException;
 import javax.microedition.io.ConnectionNotFoundException;
 import javax.microedition.midlet.MIDletStateChangeException;
@@ -39,7 +39,6 @@ abstract class DetailsForm implements ActionListener {
     private final WhereYouDey midlet;
     private Result result;
     private final ResultForm callingForm;
-    protected UIUtils uiUtils = new UIUtils();
 
     public DetailsForm(WhereYouDey midlet, ResultForm callingForm) {
         this.midlet = midlet;

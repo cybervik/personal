@@ -4,11 +4,11 @@
  */
 package com.whereyoudey.form;
 
+import com.sun.lwuit.Command;
 import com.sun.lwuit.TextField;
 import com.whereyoudey.WhereYouDey;
-import com.whereyoudey.service.Result;
-import com.whereyoudey.service.SearchService;
-import com.whereyoudey.utils.TextFieldWithHistory;
+import com.whereyoudey.service.helper.Result;
+import com.whereyoudey.utils.UiUtil;
 
 /**
  *
@@ -17,22 +17,24 @@ import com.whereyoudey.utils.TextFieldWithHistory;
 class EventsSearchForm extends SearchForm {
 
     private TextField city;
+    private String OPTION_HOME = "Home";
 
     EventsSearchForm(WhereYouDey midlet) {
         super(midlet);
     }
 
     protected void addFormFields() {
-        uiUtils.addBoldFontLabel(topContainer, "Search Events");
-        city = uiUtils.addTextFieldWithLabel(topContainer, "City");
-//        city.setText("Port Harcourt");
+        UiUtil.addBoldMediumFontLabel(topContainer, "Search Events");
+        city = UiUtil.addTextFieldWithLabel(topContainer, "City");
+        addSelectCityLink();
+        city.setText("Port Harcourt");
     }
 
-    protected void moreActionPerformed() {
+    protected void moreSelectActionPerformed() {
     }
 
     protected boolean isFormValid() {
-        return !uiUtils.isEmpty(city.getText().trim());
+        return !UiUtil.isEmpty(city.getText().trim());
     }
 
     protected void searchAction() {
@@ -53,5 +55,19 @@ class EventsSearchForm extends SearchForm {
 
     protected ResultForm getResultForm(Result[] results) {
         return new EventsResultsForm(midlet, results, this);
+    }
+
+    protected TextField getCityDependentField() {
+        return city;
+    }
+
+    protected void addFormSpecificCommands() {
+        form.addCommand(new Command(OPTION_HOME));
+    }
+
+    protected void moreActionPerformed(String commandName) {
+        if (OPTION_HOME.equals(commandName)) {
+            midlet.getSearchForm().show();
+        }
     }
 }

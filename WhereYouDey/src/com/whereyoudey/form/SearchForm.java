@@ -12,6 +12,7 @@ import com.sun.lwuit.Display;
 import com.sun.lwuit.Font;
 import com.sun.lwuit.Form;
 import com.sun.lwuit.Label;
+import com.sun.lwuit.TextField;
 import com.sun.lwuit.events.ActionEvent;
 import com.sun.lwuit.events.ActionListener;
 import com.sun.lwuit.events.FocusListener;
@@ -19,9 +20,9 @@ import com.sun.lwuit.layouts.BorderLayout;
 import com.sun.lwuit.layouts.BoxLayout;
 import com.sun.lwuit.plaf.Border;
 import com.whereyoudey.WhereYouDey;
-import com.whereyoudey.service.Result;
+import com.whereyoudey.service.helper.Result;
 import com.whereyoudey.service.SearchService;
-import com.whereyoudey.utils.UIUtils;
+import com.whereyoudey.utils.UiUtil;
 import javax.microedition.io.ConnectionNotFoundException;
 
 /**
@@ -37,6 +38,7 @@ public abstract class SearchForm implements ActionListener, Runnable {
     public static final String ICON_NAME_FLIGHTS = "Flights";
     public static final String ICON_NAME_MOVIES = "Movies";
     public static final String ICON_NAME_OFFERS = "Offers";
+    public static final String ICON_NAME_SMS_ADS = "SMS Ads";
     public static final String ICON_NAME_VIDEOS = "Videos";
     public static final int ICON_WIDTH = 20;
     public static final String LINK_MORE = "More";
@@ -56,16 +58,17 @@ public abstract class SearchForm implements ActionListener, Runnable {
         ICON_NAME_OFFERS,
         ICON_NAME_EVENTS,
         ICON_NAME_MOVIES,
-        ICON_NAME_FLIGHTS
+        ICON_NAME_FLIGHTS,
+        ICON_NAME_SMS_ADS
     };
     private static final String[] iconPaths = {
         "/img/icons/VideosIcon.png",
         "/img/icons/OffersIcon.png",
         "/img/icons/EventIcon.png",
         "/img/icons/MoviesIcon.png",
-        "/img/icons/FlightsIcon.png"
+        "/img/icons/FlightsIcon.png",
+        "/img/icons/SMSAds.png"
     };
-    protected static final UIUtils uiUtils = new UIUtils();
     protected static final SearchService searchService = new SearchService();
     protected String focussed;
     protected Form form;
@@ -74,6 +77,7 @@ public abstract class SearchForm implements ActionListener, Runnable {
     protected Dialog waitDialog;
     protected Result[] results;
     private ResultForm resultForm;
+    private ListForm cityOptionsform;
 
     public SearchForm(WhereYouDey midlet) {
         this.midlet = midlet;
@@ -87,9 +91,9 @@ public abstract class SearchForm implements ActionListener, Runnable {
         } else if (OPTION_FIND.equals(commandName)) {
             search();
         } else if (OPTION_ABOUT_US.equals(commandName)) {
-            uiUtils.showAbout();
+            UiUtil.showAbout();
         } else if (OPTION_HELP.equals(commandName)) {
-            uiUtils.showHelp();
+            UiUtil.showHelp();
         } else if (OPTION_CHECK_FOR_UPDATES.equals(commandName)) {
             requestPlatFormService(UPDATE_URL);
         } else if (OPTION_SELECT.equals(commandName)) {
@@ -97,18 +101,24 @@ public abstract class SearchForm implements ActionListener, Runnable {
             if (ICON_NAME_VIDEOS.equals(focussed)) {
                 requestPlatFormService(VIDEO_URL);
             } else if (LINK_MORE.equals(focussed)) {
-                uiUtils.showDialog("Comming soon...");
+                UiUtil.showDialog("Comming soon...");
             } else if (ICON_NAME_FLIGHTS.equals(focussed)) {
-                uiUtils.showDialog("Comming soon...");
+                UiUtil.showDialog("Comming soon...");
             } else if (ICON_NAME_OFFERS.equals(focussed)) {
-                uiUtils.showDialog("Comming soon...");
+                UiUtil.showDialog("Comming soon...");
             } else if (ICON_NAME_MOVIES.equals(focussed)) {
-                uiUtils.showDialog("Comming soon...");
+                UiUtil.showDialog("Comming soon...");
+            } else if (ICON_NAME_SMS_ADS.equals(focussed)) {
+                UiUtil.showDialog("Comming soon...");
             } else if (ICON_NAME_EVENTS.equals(focussed)) {
                 showEventsForm();
+            } else if (LINK_SELECT_CITY.equals(focussed)) {
+                createCitiesOptionsForm(getCityDependentField());
             } else {
-                moreActionPerformed();
+                moreSelectActionPerformed();
             }
+        } else {
+            moreActionPerformed(commandName);
         }
     }
 
@@ -119,11 +129,11 @@ public abstract class SearchForm implements ActionListener, Runnable {
     }
 
     private void addIcons() {
-        Container icons = uiUtils.getBoxLayoutColumnStyleContainer();
+        Container icons = UiUtil.getBoxLayoutColumnStyleContainer();
         int noOfIconsFittingInScreenWidth = (DISPLAY_WIDTH - MORE_LINK_POSSIBLE_WIDTH) / ICON_WIDTH;
         for (int i = 0; i < noOfIconsFittingInScreenWidth && i < iconPaths.length; i++) {
             final int pos = i;
-            Label image = uiUtils.getImage(iconPaths[i], ICON_WIDTH);
+            Label image = UiUtil.getImageLabel(iconPaths[i], ICON_WIDTH);
             image.setFocusable(true);
             image.addFocusListener(new FocusListener() {
 
@@ -141,9 +151,10 @@ public abstract class SearchForm implements ActionListener, Runnable {
                 image.getStyle().setBorder(Border.createBevelRaised());
             }
             image.getSelectedStyle().setBorder(Border.createLineBorder(1));
+            image.getStyle().setPadding(0, 0, 4, 4);
             icons.addComponent(image);
         }
-        Label moreLink = uiUtils.getLink(LINK_MORE);
+        Label moreLink = UiUtil.getLink(LINK_MORE);
         moreLink.addFocusListener(new FocusListener() {
 
             public void focusGained(Component cmpnt) {
@@ -162,12 +173,12 @@ public abstract class SearchForm implements ActionListener, Runnable {
 
     private void addLogo() {
         int logoWidth = DISPLAY_WIDTH * 2 / 3;
-        Label logo = uiUtils.getImage(LOGO_PATH, logoWidth);
+        Label logo = UiUtil.getImageLabel(LOGO_PATH, logoWidth);
         topContainer.addComponent(logo);
     }
 
     private void addMainElements() {
-        topContainer = uiUtils.geBoxLayoutContainer(BoxLayout.Y_AXIS);
+        topContainer = UiUtil.geBoxLayoutContainer(BoxLayout.Y_AXIS);
         addLogo();
         addIcons();
         addFormFields();
@@ -179,12 +190,13 @@ public abstract class SearchForm implements ActionListener, Runnable {
 
     private void addMenuActions() {
         form.addCommandListener(this);
-        form.addCommand(new Command(OPTION_FIND));
         form.addCommand(new Command(OPTION_EXIT));
         form.addCommand(new Command(OPTION_ABOUT_US));
-        form.addCommand(new Command(OPTION_HELP));
-        form.addCommand(new Command(OPTION_SELECT));
         form.addCommand(new Command(OPTION_CHECK_FOR_UPDATES));
+        form.addCommand(new Command(OPTION_HELP));
+        addFormSpecificCommands();
+        form.addCommand(new Command(OPTION_SELECT));
+        form.addCommand(new Command(OPTION_FIND));
     }
 
     private void createForm() {
@@ -226,7 +238,7 @@ public abstract class SearchForm implements ActionListener, Runnable {
         waitDialog = new Dialog();
         waitDialog.setLayout(new BorderLayout());
         waitDialog.getStyle().setBgColor(COLOR_BACKGROUND);
-        Label waitLabel = uiUtils.getImage("/img/wait.png", ICON_WIDTH);
+        Label waitLabel = UiUtil.getImageLabel("/img/wait.png", ICON_WIDTH);
         waitLabel.setText("Searching");
         Font smallFont = Font.createSystemFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL);
         waitLabel.getStyle().setFont(smallFont);
@@ -262,7 +274,7 @@ public abstract class SearchForm implements ActionListener, Runnable {
 
     public void search() {
         if (!isFormValid()) {
-            uiUtils.showDialog(getFormInvalidMessage());
+            UiUtil.showDialog(getFormInvalidMessage());
             return;
         }
         Thread t = new Thread(this);
@@ -272,7 +284,7 @@ public abstract class SearchForm implements ActionListener, Runnable {
 
     protected abstract void addFormFields();
 
-    protected abstract void moreActionPerformed();
+    protected abstract void moreSelectActionPerformed();
 
     protected abstract boolean isFormValid();
 
@@ -281,4 +293,36 @@ public abstract class SearchForm implements ActionListener, Runnable {
     protected abstract int getSelectedIconPos();
 
     protected abstract String getFormInvalidMessage();
+
+    protected void createCitiesOptionsForm(TextField associatedField) {
+        if (cityOptionsform == null) {
+            cityOptionsform = new ListForm(midlet, ListForm.CITIES, associatedField, this);
+        } else {
+            cityOptionsform.show(associatedField, this);
+        }
+    }
+
+    protected abstract TextField getCityDependentField();
+
+    protected void addSelectCityLink() {
+        Label chooseCityLink = UiUtil.getLink("or Choose City");
+        chooseCityLink.setFocusable(true);
+        chooseCityLink.addFocusListener(new FocusListener() {
+
+            public void focusGained(Component cmpnt) {
+                focussed = SearchForm.LINK_SELECT_CITY;
+            }
+
+            public void focusLost(Component cmpnt) {
+                if (SearchForm.LINK_SELECT_CITY.equals(focussed)) {
+                    focussed = "";
+                }
+            }
+        });
+        topContainer.addComponent(chooseCityLink);
+    }
+
+    protected abstract void addFormSpecificCommands();
+
+    protected abstract void moreActionPerformed(String commandName);
 }

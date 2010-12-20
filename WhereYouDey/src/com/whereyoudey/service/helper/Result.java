@@ -2,8 +2,9 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.whereyoudey.service;
+package com.whereyoudey.service.helper;
 
+import com.whereyoudey.service.helper.Property;
 import java.util.Vector;
 
 /**
@@ -23,7 +24,7 @@ public class Result {
         properties = new Vector(INITIAL_SIZE);
     }
 
-    void setProperty(String tagName, String text) {
+    public void setProperty(String tagName, String text) {
         Property prop = new Property(tagName, text);
         properties.addElement(prop);
     }

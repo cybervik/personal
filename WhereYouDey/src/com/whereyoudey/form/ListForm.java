@@ -15,34 +15,36 @@ import com.sun.lwuit.layouts.BoxLayout;
 import com.sun.lwuit.list.DefaultListCellRenderer;
 import com.sun.lwuit.list.ListCellRenderer;
 import com.whereyoudey.WhereYouDey;
-import com.whereyoudey.utils.UIUtils;
+import com.whereyoudey.utils.UiUtil;
 
 /**
  *
  * @author Vikram S
  */
 public class ListForm implements ActionListener {
+
+    public static final int COLOR_BLACK = 0x000000;
+    public static final int COLOR_WHITE = 0xffffff;
+    private static final int COLOR_SELECTEDITEM_BACKGROUND = 0x9999ff;
     public static final String OPTION_CANCEL = "Cancel";
     public static final String OPTION_SELECT = "Select";
-
     private Form listForm;
     private final WhereYouDey midlet;
     private final List citiesList;
-    private final UIUtils uiUtils;
-    private final TextField associatedField;
+    private TextField associatedField;
+    private SearchForm callingForm;
 
-    public ListForm(WhereYouDey midlet, String [] data, TextField associatedField) {
-        uiUtils = new UIUtils();
+    public ListForm(WhereYouDey midlet, String[] data, TextField associatedField, SearchForm callingForm) {
         listForm = new Form();
         listForm.getStyle().setBgColor(BusinessSearchForm.COLOR_BACKGROUND);
         listForm.setLayout(new BoxLayout(BoxLayout.Y_AXIS));
         citiesList = new List(data);
         final DefaultListCellRenderer renderer = (DefaultListCellRenderer) citiesList.getRenderer();
         renderer.setShowNumbers(false);
-        renderer.getSelectedStyle().setBgColor(ResultForm.COLOR_SELECTEDITEM_BACKGROUND);
-        renderer.getSelectedStyle().setFgColor(ResultForm.COLOR_BLACK);
-        Font smallFont = uiUtils.getFont(Font.STYLE_PLAIN, Font.SIZE_SMALL);
-        Font smallBoldFont = uiUtils.getFont(Font.STYLE_BOLD, Font.SIZE_SMALL);
+        renderer.getSelectedStyle().setBgColor(COLOR_SELECTEDITEM_BACKGROUND);
+        renderer.getSelectedStyle().setFgColor(COLOR_BLACK);
+        Font smallFont = UiUtil.getFont(Font.STYLE_PLAIN, Font.SIZE_SMALL);
+        Font smallBoldFont = UiUtil.getFont(Font.STYLE_BOLD, Font.SIZE_SMALL);
         renderer.getStyle().setFont(smallFont);
         renderer.getSelectedStyle().setFont(smallBoldFont);
         listForm.addComponent(citiesList);
@@ -52,6 +54,7 @@ public class ListForm implements ActionListener {
         listForm.show();
         this.midlet = midlet;
         this.associatedField = associatedField;
+        this.callingForm = callingForm;
     }
     public static final String[] CITIES = {
         "Aba",
@@ -237,13 +240,17 @@ public class ListForm implements ActionListener {
         if (OPTION_SELECT.equals(commandName)) {
             String selectCity = citiesList.getSelectedItem().toString();
             associatedField.setText(selectCity);
-            midlet.getSearchForm().show();
+            callingForm.show();
         } else if (OPTION_CANCEL.equals(commandName)) {
-            midlet.getSearchForm().show();
+            callingForm.show();
         }
     }
 
-    public void show() {
+    public void show(TextField associatedField, SearchForm callingForm) {
+        this.associatedField = associatedField;
+        this.callingForm = callingForm;
+        this.listForm.scrollComponentToVisible(this.citiesList);
+        this.citiesList.setSelectedIndex(0);
         this.listForm.show();
     }
 }

@@ -1,33 +1,22 @@
 package com.whereyoudey.form;
 
-import com.sun.lwuit.Component;
-import com.sun.lwuit.Label;
 import com.sun.lwuit.TextField;
-import com.sun.lwuit.events.FocusListener;
 import com.whereyoudey.WhereYouDey;
-import com.whereyoudey.service.Result;
-import com.whereyoudey.service.SearchService;
-import com.whereyoudey.utils.TextFieldWithHistory;
+import com.whereyoudey.service.helper.Result;
+import com.whereyoudey.utils.UiUtil;
 import com.whereyoudey.webservice.ArrayOfString;
 
 public class BusinessSearchForm extends SearchForm {
 
     private TextField business;
     private TextField area;
-    private ListForm cityOptionsform;
 
     public BusinessSearchForm(WhereYouDey midlet) {
         super(midlet);
     }
 
-    private void createCitiesOptionsForm() {
-        if (cityOptionsform == null) {
-            cityOptionsform = new ListForm(midlet, ListForm.CITIES, area);
-        }
-    }
-
     protected boolean isFormValid() {
-        return !uiUtils.isEmpty(getSearchBusinessText());
+        return !UiUtil.isEmpty(getSearchBusinessText());
     }
 
     protected void searchAction() {
@@ -42,42 +31,22 @@ public class BusinessSearchForm extends SearchForm {
         addBusinessTextField();
         addAreaTextField();
         addSelectCityLink();
+        this.business.setText("Barber");
     }
 
     private void addAreaTextField() {
-        area = uiUtils.addTextFieldWithLabel(topContainer, "Area/City/State");
+        area = UiUtil.addTextFieldWithLabel(topContainer, "Area/City/State");
     }
 
     private void addBusinessTextField() {
-        business = uiUtils.addTextFieldWithLabel(topContainer, "Businesses or Keywords");
-    }
-
-    private void addSelectCityLink() {
-        Label chooseCityLink = uiUtils.getLink("or Choose City");
-        chooseCityLink.setFocusable(true);
-        chooseCityLink.addFocusListener(new FocusListener() {
-
-            public void focusGained(Component cmpnt) {
-                focussed = LINK_SELECT_CITY;
-            }
-
-            public void focusLost(Component cmpnt) {
-                if (LINK_SELECT_CITY.equals(focussed)) {
-                    focussed = "";
-                }
-            }
-        });
-        topContainer.addComponent(chooseCityLink);
+        business = UiUtil.addTextFieldWithLabel(topContainer, "Businesses or Keywords");
     }
 
     void setAreaText(String area) {
         this.area.setText(area);
     }
 
-    protected void moreActionPerformed() {
-        if (LINK_SELECT_CITY.equals(focussed)) {
-            createCitiesOptionsForm();
-        }
+    protected void moreSelectActionPerformed() {
     }
 
     public String getSearchBusinessText() {
@@ -89,7 +58,7 @@ public class BusinessSearchForm extends SearchForm {
     }
 
     protected int getSelectedIconPos() {
-        return 0;
+        return -1;
     }
 
     protected void setFocus() {
@@ -102,5 +71,15 @@ public class BusinessSearchForm extends SearchForm {
 
     protected ResultForm getResultForm(Result[] results) {
         return new BusinessResultsForm(midlet, results, this);
+    }
+
+    protected TextField getCityDependentField() {
+        return area;
+    }
+
+    protected void addFormSpecificCommands() {
+    }
+
+    protected void moreActionPerformed(String commandName) {
     }
 }
