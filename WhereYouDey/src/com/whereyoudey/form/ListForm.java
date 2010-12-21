@@ -15,6 +15,7 @@ import com.sun.lwuit.layouts.BoxLayout;
 import com.sun.lwuit.list.DefaultListCellRenderer;
 import com.sun.lwuit.list.ListCellRenderer;
 import com.whereyoudey.WhereYouDey;
+import com.whereyoudey.utils.Colors;
 import com.whereyoudey.utils.UiUtil;
 
 /**
@@ -23,9 +24,6 @@ import com.whereyoudey.utils.UiUtil;
  */
 public class ListForm implements ActionListener {
 
-    public static final int COLOR_BLACK = 0x000000;
-    public static final int COLOR_WHITE = 0xffffff;
-    private static final int COLOR_SELECTEDITEM_BACKGROUND = 0x9999ff;
     public static final String OPTION_CANCEL = "Cancel";
     public static final String OPTION_SELECT = "Select";
     private Form listForm;
@@ -36,13 +34,13 @@ public class ListForm implements ActionListener {
 
     public ListForm(WhereYouDey midlet, String[] data, TextField associatedField, SearchForm callingForm) {
         listForm = new Form();
-        listForm.getStyle().setBgColor(BusinessSearchForm.COLOR_BACKGROUND);
+        listForm.getStyle().setBgColor(Colors.FORM_BACKGROUND);
         listForm.setLayout(new BoxLayout(BoxLayout.Y_AXIS));
         citiesList = new List(data);
         final DefaultListCellRenderer renderer = (DefaultListCellRenderer) citiesList.getRenderer();
         renderer.setShowNumbers(false);
-        renderer.getSelectedStyle().setBgColor(COLOR_SELECTEDITEM_BACKGROUND);
-        renderer.getSelectedStyle().setFgColor(COLOR_BLACK);
+        renderer.getSelectedStyle().setBgColor(Colors.SELECTEDITEM_BACKGROUND);
+        renderer.getSelectedStyle().setFgColor(Colors.BLACK);
         Font smallFont = UiUtil.getFont(Font.STYLE_PLAIN, Font.SIZE_SMALL);
         Font smallBoldFont = UiUtil.getFont(Font.STYLE_BOLD, Font.SIZE_SMALL);
         renderer.getStyle().setFont(smallFont);

@@ -147,7 +147,7 @@ public class UiUtil {
     }
 
     public static void showHelp() {
-        showDialog("Please conatct: support@whereyoudey.com");
+        showDialog("Please contact: support@whereyoudey.com");
     }
 
     public static String getCommaSepFormat(final String val1, final String val2) {

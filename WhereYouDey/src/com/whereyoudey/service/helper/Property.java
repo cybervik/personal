@@ -10,20 +10,24 @@ package com.whereyoudey.service.helper;
  */
 public class Property {
 
-    private final String tagName;
-    private final String text;
+    private final String name;
+    private final String value;
 
-    Property(String tagName, String text) {
-        this.tagName = tagName;
-        this.text = text;
+    public Property(String name, String value) {
+        this.name = name;
+        this.value = value;
     }
 
-    public String getTagName() {
-        return tagName;
+    public Property(String name) {
+        this(name, "");
     }
 
-    public String getText() {
-        return text;
+    public String getName() {
+        return name;
+    }
+
+    public String getValue() {
+        return value;
     }
 
     public boolean equals(Object obj) {
@@ -34,7 +38,7 @@ public class Property {
             return false;
         }
         final Property other = (Property) obj;
-        if ((this.tagName == null) ? (other.tagName != null) : !this.tagName.equals(other.tagName)) {
+        if ((this.name == null) ? (other.name != null) : !this.name.equals(other.name)) {
             return false;
         }
         return true;
@@ -42,7 +46,7 @@ public class Property {
 
     public int hashCode() {
         int hash = 3;
-        hash = 89 * hash + (this.tagName != null ? this.tagName.hashCode() : 0);
+        hash = 89 * hash + (this.name != null ? this.name.hashCode() : 0);
         return hash;
     }
     

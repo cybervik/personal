@@ -44,8 +44,6 @@ public class EventsResultsForm extends ResultForm {
         UiUtil.add(itemContainer, UiUtil.getCommaSepFormat(telephone1, telephone2));
     }
 
-
-
     private void setPrimaryPhoneProperty(final String telephone1, final String telephone2) {
         primaryPhoneProperty = (UiUtil.isEmpty(telephone1) ? "Telephone2" : "Telephone1");
     }
@@ -67,5 +65,9 @@ public class EventsResultsForm extends ResultForm {
 
     protected DetailsForm getDetailsForm() {
         return new EventDetailsForm(midlet, this);
+    }
+
+    protected String getTitleProperty() {
+        return "EventName";
     }
 }

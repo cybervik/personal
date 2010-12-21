@@ -75,4 +75,8 @@ public class BusinessResultsForm extends ResultForm {
     protected DetailsForm getDetailsForm() {
         return new BusinessDetailsForm(midlet, this);
     }
+
+    protected String getTitleProperty() {
+        return "Name";
+    }
 }

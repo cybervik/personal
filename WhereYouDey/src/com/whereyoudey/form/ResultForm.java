@@ -8,13 +8,18 @@ import com.whereyoudey.form.component.Header;
 import com.whereyoudey.utils.SortUtil;
 import com.sun.lwuit.Command;
 import com.sun.lwuit.Container;
+import com.sun.lwuit.Dialog;
+import com.sun.lwuit.Font;
 import com.sun.lwuit.Form;
+import com.sun.lwuit.Label;
 import com.sun.lwuit.events.ActionEvent;
 import com.sun.lwuit.events.ActionListener;
 import com.sun.lwuit.layouts.BorderLayout;
 import com.whereyoudey.WhereYouDey;
 import com.whereyoudey.form.component.SearchResultsContainer;
+import com.whereyoudey.service.SearchService;
 import com.whereyoudey.service.helper.Result;
+import com.whereyoudey.utils.Colors;
 import com.whereyoudey.utils.UiUtil;
 import javax.microedition.io.ConnectionNotFoundException;
 
@@ -22,8 +27,10 @@ import javax.microedition.io.ConnectionNotFoundException;
  *
  * @author Vikram S
  */
-public abstract class ResultForm implements ActionListener {
+public abstract class ResultForm implements ActionListener, Runnable {
 
+    public static final String OPTION_NEXT = "Next";
+    public static final String OPTION_PREV = "Prev";
     private static final String OPTION_BACK = "Back";
     private static final String OPTION_CALL = "Call";
     private static final String OPTION_EXIT = "Exit";
@@ -42,6 +49,7 @@ public abstract class ResultForm implements ActionListener {
     private int MAX_RESULTS = 10;
     private SearchResultsContainer resultsList;
     private DetailsForm detailsForm;
+    private Dialog waitDialog;
 
     ResultForm(WhereYouDey midlet, Result[] results, SearchForm callingForm) {
         initVariables(midlet);
@@ -60,6 +68,8 @@ public abstract class ResultForm implements ActionListener {
         form.addCommand(new Command(OPTION_BACK));
         form.addCommand(new Command(OPTION_HOME));
         form.addCommand(new Command(OPTION_HELP));
+        form.addCommand(new Command(OPTION_PREV));
+        form.addCommand(new Command(OPTION_NEXT));
         addFormSpecificCommands();
         form.addCommand(new Command(OPTION_CALL));
         form.addCommand(new Command(OPTION_SELECT));
@@ -99,15 +109,7 @@ public abstract class ResultForm implements ActionListener {
                 resultsList.selectItemDown();
                 break;
         }
-    }
-
-    private void setTitle(Container selectedItem) {
-//        if (isAdvertisement()) {
-//            header.setText("Advertisement Space");
-//        } else {
-//            final Component title = selectedItem.getComponentAt(0);
-//            header.setText(((Label) title).getText());
-//        }
+        updateTitle();
     }
 
     private void showDetailsForm() {
@@ -125,7 +127,7 @@ public abstract class ResultForm implements ActionListener {
 
     protected void initProcessedResults(Result[] results) throws NumberFormatException {
         this.results = results;
-        resultsList.reset();
+        this.resultsList.reset();
         for (int i = 0; i < results.length; i++) {
             Result result = results[i];
             if (result != null) {
@@ -134,8 +136,17 @@ public abstract class ResultForm implements ActionListener {
                 resultsList.addComponent(itemContainer);
             }
         }
-        header.setResultCount(resultsList.getCount());
+        updateHeader();
         form.show();
+    }
+
+    private void updateHeader() {
+        header.setResultCount(resultsList.getCount());
+        updateTitle();
+    }
+
+    private void updateTitle() {
+        header.setTitle(resultsList.getSelectedItemResultRecord().getProperty(getTitleProperty()));
     }
 
     protected abstract void renderResult(Result result, Container itemContainer) throws NumberFormatException;
@@ -210,10 +221,64 @@ public abstract class ResultForm implements ActionListener {
             showDetailsForm();
         } else if (commandName.equals(OPTION_CALL)) {
             call();
+        } else if (commandName.equals(OPTION_NEXT)) {
+            callingForm.search();
+        } else if (commandName.equals(OPTION_PREV)) {
+            callingForm.search();
         } else {
             handleFormSpecificCommandAction(commandName);
         }
     }
 
+    public void search() {
+        Thread t = new Thread(this);
+        t.start();
+        showWait();
+    }
+
+    public void showWait() {
+        waitDialog = new Dialog();
+        waitDialog.setLayout(new BorderLayout());
+        waitDialog.getStyle().setBgColor(Colors.FORM_BACKGROUND);
+        Label waitLabel = UiUtil.getImageLabel("/img/wait.png", 20);
+        waitLabel.setText("Searching");
+        Font smallFont = Font.createSystemFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL);
+        waitLabel.getStyle().setFont(smallFont);
+        waitLabel.getStyle().setMargin(0, 0, 0, 0);
+        waitLabel.getStyle().setPadding(0, 0, 0, 0);
+        waitLabel.getStyle().setBgColor(Colors.FORM_BACKGROUND);
+        waitDialog.addComponent(BorderLayout.CENTER, waitLabel);
+        try {
+            waitDialog.showPacked(BorderLayout.CENTER, true);
+        } catch (Exception e) {
+            System.out.println("Error in show wait");
+            e.printStackTrace();
+        }
+    }
+
+    public void run() {
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException ex) {
+            ex.printStackTrace();
+        }
+        try {
+            callingForm.searchAction();
+            initResults(results);
+            hideWait();
+        } catch (Exception e) {
+            System.out.println("Error Occurred ....");
+            e.printStackTrace();
+        }
+    }
+
+    private void hideWait() {
+        if (waitDialog != null) {
+            waitDialog.dispose();
+        }
+    }
+
     protected abstract void handleFormSpecificCommandAction(String commandName);
+
+    protected abstract String getTitleProperty();
 }

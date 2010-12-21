@@ -22,6 +22,7 @@ import com.sun.lwuit.plaf.Border;
 import com.whereyoudey.WhereYouDey;
 import com.whereyoudey.service.helper.Result;
 import com.whereyoudey.service.SearchService;
+import com.whereyoudey.utils.Colors;
 import com.whereyoudey.utils.UiUtil;
 import javax.microedition.io.ConnectionNotFoundException;
 
@@ -31,7 +32,6 @@ import javax.microedition.io.ConnectionNotFoundException;
  */
 public abstract class SearchForm implements ActionListener, Runnable {
 
-    public static final int COLOR_BACKGROUND = 15987699;
     public static final int DISPLAY_WIDTH = Display.getInstance().getDisplayWidth();
     public static final String FLIGHTS_URL = "http://www.wakanow.com";
     public static final String ICON_NAME_EVENTS = "Events";
@@ -202,7 +202,7 @@ public abstract class SearchForm implements ActionListener, Runnable {
     private void createForm() {
         form = new Form("");
         form.setLayout(new BorderLayout());
-        form.getStyle().setBgColor(COLOR_BACKGROUND);
+        form.getStyle().setBgColor(Colors.FORM_BACKGROUND);
     }
 
     public Component getFocussed() {
@@ -234,19 +234,22 @@ public abstract class SearchForm implements ActionListener, Runnable {
         form.show();
     }
 
-    protected void showWait() {
+    public void showWait() {
         waitDialog = new Dialog();
         waitDialog.setLayout(new BorderLayout());
-        waitDialog.getStyle().setBgColor(COLOR_BACKGROUND);
+        waitDialog.getStyle().setBgColor(Colors.FORM_BACKGROUND);
         Label waitLabel = UiUtil.getImageLabel("/img/wait.png", ICON_WIDTH);
         waitLabel.setText("Searching");
         Font smallFont = Font.createSystemFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL);
         waitLabel.getStyle().setFont(smallFont);
         waitLabel.getStyle().setMargin(0, 0, 0, 0);
         waitLabel.getStyle().setPadding(0, 0, 0, 0);
-        waitLabel.getStyle().setBgColor(COLOR_BACKGROUND);
+        waitLabel.getStyle().setBgColor(Colors.FORM_BACKGROUND);
         waitDialog.addComponent(BorderLayout.CENTER, waitLabel);
-        waitDialog.showPacked(BorderLayout.CENTER, true);
+        try {
+            waitDialog.showPacked(BorderLayout.CENTER, true);
+        } catch (Exception e) {
+        }
     }
 
     public void run() {
@@ -256,11 +259,12 @@ public abstract class SearchForm implements ActionListener, Runnable {
             ex.printStackTrace();
         }
         searchAction();
+        initResultForm(results);
         hideWait();
-        showResultForm(results);
+        resultForm.show();
     }
 
-    private void showResultForm(Result[] results) throws NumberFormatException {
+    private void initResultForm(Result[] results) throws NumberFormatException {
         if (resultForm == null) {
             resultForm = getResultForm(results);
         } else {
