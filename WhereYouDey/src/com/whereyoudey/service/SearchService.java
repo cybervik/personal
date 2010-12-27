@@ -100,4 +100,19 @@ public class SearchService {
         }
         return events;
     }
+
+    public Result[] searchMovies(String city) {
+        Result[] movies = new Result[0];
+        try {
+            Search_Stub search_Stub = new Search_Stub();
+            String moviesAsXmlS = search_Stub.GetCityTheaters(city);
+            System.out.println(moviesAsXmlS);
+            movies = processResponse(moviesAsXmlS, "SearchResults", "Result");
+        } catch (XmlPullParserException ex) {
+            ex.printStackTrace();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+        return movies;
+    }
 }

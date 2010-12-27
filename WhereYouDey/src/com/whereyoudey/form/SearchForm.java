@@ -24,6 +24,7 @@ import com.whereyoudey.service.helper.Result;
 import com.whereyoudey.service.SearchService;
 import com.whereyoudey.utils.Colors;
 import com.whereyoudey.utils.UiUtil;
+import com.whereyoudey.webservice.Search;
 import javax.microedition.io.ConnectionNotFoundException;
 
 /**
@@ -78,6 +79,7 @@ public abstract class SearchForm implements ActionListener, Runnable {
     protected Result[] results;
     private ResultForm resultForm;
     private ListForm cityOptionsform;
+    private SearchForm eventsForm;
 
     public SearchForm(WhereYouDey midlet) {
         this.midlet = midlet;
@@ -107,7 +109,7 @@ public abstract class SearchForm implements ActionListener, Runnable {
             } else if (ICON_NAME_OFFERS.equals(focussed)) {
                 UiUtil.showDialog("Comming soon...");
             } else if (ICON_NAME_MOVIES.equals(focussed)) {
-                UiUtil.showDialog("Comming soon...");
+                showMoviesForm();
             } else if (ICON_NAME_SMS_ADS.equals(focussed)) {
                 UiUtil.showDialog("Comming soon...");
             } else if (ICON_NAME_EVENTS.equals(focussed)) {
@@ -125,7 +127,7 @@ public abstract class SearchForm implements ActionListener, Runnable {
     protected abstract ResultForm getResultForm(Result[] results);
 
     private void showEventsForm() {
-        EventsSearchForm eventsForm = new EventsSearchForm(midlet);
+        eventsForm = new EventsSearchForm(midlet);
     }
 
     private void addIcons() {
@@ -222,9 +224,9 @@ public abstract class SearchForm implements ActionListener, Runnable {
         show();
     }
 
-    private void requestPlatFormService(String vu) {
+    private void requestPlatFormService(String uri) {
         try {
-            midlet.platformRequest(vu);
+            midlet.platformRequest(uri);
         } catch (ConnectionNotFoundException ex) {
             ex.printStackTrace();
         }
@@ -329,4 +331,8 @@ public abstract class SearchForm implements ActionListener, Runnable {
     protected abstract void addFormSpecificCommands();
 
     protected abstract void moreActionPerformed(String commandName);
+
+    private void showMoviesForm() {
+        SearchForm moviesSearchForm = new MoviesSearchForm(midlet);
+    }
 }

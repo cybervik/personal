@@ -105,7 +105,6 @@ public abstract class ResultForm implements ActionListener, Runnable {
                 resultsList.selectItemUp();
                 break;
             case -2:
-
                 resultsList.selectItemDown();
                 break;
         }

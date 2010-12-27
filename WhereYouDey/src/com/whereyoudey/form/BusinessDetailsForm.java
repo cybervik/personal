@@ -4,12 +4,29 @@
  */
 package com.whereyoudey.form;
 
+import com.sun.lwuit.Button;
+import com.sun.lwuit.Command;
+import com.sun.lwuit.Component;
 import com.sun.lwuit.Container;
+import com.sun.lwuit.Dialog;
+import com.sun.lwuit.Font;
+import com.sun.lwuit.Image;
 import com.sun.lwuit.Label;
+import com.sun.lwuit.TextField;
+import com.sun.lwuit.events.ActionEvent;
+import com.sun.lwuit.events.ActionListener;
+import com.sun.lwuit.layouts.BorderLayout;
 import com.sun.lwuit.layouts.BoxLayout;
+import com.sun.lwuit.layouts.FlowLayout;
 import com.whereyoudey.WhereYouDey;
 import com.whereyoudey.form.component.Section;
 import com.whereyoudey.service.helper.Result;
+import com.whereyoudey.utils.UiUtil;
+import java.io.IOException;
+import java.io.InputStream;
+import javax.microedition.io.ConnectionNotFoundException;
+import javax.microedition.io.Connector;
+import javax.microedition.io.HttpConnection;
 
 /**
  *
@@ -34,22 +51,17 @@ public class BusinessDetailsForm extends DetailsForm {
         super(midlet, callingForm);
     }
 
-    protected void addFormElements() throws NumberFormatException {
-        addBasicInfo();
-        setRating("0");
-        addSections();
-    }
-
-    private void addBasicInfo() {
+    protected void addBasicInfo() {
         address = addSmallFontLabel("");
         city = addSmallFontLabel("");
         state = addSmallFontLabel("");
         phoneNumber = addBigFontLabel("");
         ratingContainer = new Container(new BoxLayout(BoxLayout.X_AXIS));
         form.addComponent(ratingContainer);
+        setRating("0");
     }
 
-    private void addSections() {
+    protected void addFormSpecificSections() {
         hoursOfOperation = new Section(form, "Hours Of Operations", "");
         description = new Section(form, "DESCRIPTION", "");
         productsInformation = new Section(form, "Products Information", "");
@@ -105,4 +117,7 @@ public class BusinessDetailsForm extends DetailsForm {
         return "Phone";
     }
 
+    protected String getAddress() {
+        return result.getProperty("Address");
+    }
 }

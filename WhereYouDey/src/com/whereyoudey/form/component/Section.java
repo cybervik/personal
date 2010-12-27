@@ -4,6 +4,7 @@
  */
 package com.whereyoudey.form.component;
 
+import com.sun.lwuit.Component;
 import com.sun.lwuit.Container;
 import com.sun.lwuit.Display;
 import com.sun.lwuit.Font;
@@ -13,6 +14,7 @@ import com.sun.lwuit.Label;
 import com.sun.lwuit.Painter;
 import com.sun.lwuit.geom.Rectangle;
 import com.sun.lwuit.layouts.BoxLayout;
+import com.whereyoudey.utils.UiUtil;
 
 /**
  *
@@ -31,6 +33,7 @@ public class Section {
         addLine();
         this.title = addBigFontLabel(title);
         this.desc = addSmallFontLabel(desc);
+        container.setFocusable(true);
         form.addComponent(container);
     }
 
@@ -67,5 +70,11 @@ public class Section {
 
     public void setDetails(String description) {
         desc.setText(description);
+    }
+
+    public void addComponents(Component comp) {
+        comp.getStyle().setMargin(Component.LEFT, 10);
+        comp.getSelectedStyle().setMargin(Component.LEFT, 10);
+        container.addComponent(comp);
     }
 }

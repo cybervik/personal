@@ -169,4 +169,35 @@ public class UiUtil {
             }
         }
     }
+
+    static public String urlEncode(String url) {
+        StringBuffer encodedUrl = new StringBuffer();
+        for (int i = 0; i < url.length(); i++) {
+            char ch = url.charAt(i);
+            switch (ch) {
+                case '<':
+                    encodedUrl.append("%3C");
+                    break;
+                case '>':
+                    encodedUrl.append("%3E");
+                    break;
+                case '/':
+                    encodedUrl.append("%2F");
+                    break;
+                case ' ':
+                    encodedUrl.append("%20");
+                    break;
+                case ':':
+                    encodedUrl.append("%3A");
+                    break;
+                case '-':
+                    encodedUrl.append("%2D");
+                    break;
+                default:
+                    encodedUrl.append(ch);
+                    break;
+            }
+        }
+        return encodedUrl.toString();
+    }
 }

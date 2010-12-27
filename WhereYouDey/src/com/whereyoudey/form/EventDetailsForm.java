@@ -25,20 +25,10 @@ public class EventDetailsForm extends DetailsForm {
     private Section description;
     private Section keywords;
     private String primaryPhoneProperty;
+    private Label category;
 
     public EventDetailsForm(WhereYouDey midlet, ResultForm callingForm) {
         super(midlet, callingForm);
-    }
-
-    protected void addFormElements() throws NumberFormatException {
-        date = addSmallFontLabel("");
-        address1 = addSmallFontLabel("");
-        address2 = addSmallFontLabel("");
-        telephone = addSmallFontLabel("");
-        venue = addSmallFontLabel("");
-        website = addSmallFontLabel("");
-        description = new Section(form, "Description", "");
-        keywords = new Section(form, "Key Words", "");
     }
 
     protected String getHeaderProperty() {
@@ -63,6 +53,7 @@ public class EventDetailsForm extends DetailsForm {
         final String lattitude = result.getProperty("Lattitude");
         final String longitude = result.getProperty("Longitude");
         final String website = result.getProperty("Website");
+        final String category = result.getProperty("CategoryName");
         setPrimaryPhoneProperty(telephone1, telephone2);
         this.date.setText(date);
         this.venue.setText(venue);
@@ -72,9 +63,32 @@ public class EventDetailsForm extends DetailsForm {
         this.website.setText(website);
         this.keywords.setDetails(keywords);
         this.description.setDetails(description);
+        this.category.setText(category);
     }
 
     private void setPrimaryPhoneProperty(final String telephone1, final String telephone2) {
         primaryPhoneProperty = (UiUtil.isEmpty(telephone1) ? "Telephone2" : "Telephone1");
+    }
+
+    protected void addBasicInfo() {
+        date = addSmallFontLabel("");
+        venue = addSmallFontLabel("");
+        address1 = addSmallFontLabel("");
+        address2 = addSmallFontLabel("");
+        category = addSmallFontLabel("");
+        telephone = addSmallFontLabel("");
+        website = addSmallFontLabel("");
+    }
+
+    protected void addFormSpecificSections() {
+        description = new Section(form, "Description", "");
+        keywords = new Section(form, "Key Words", "");
+    }
+
+    protected String getAddress() {
+        final String street = result.getProperty("Street");
+        final String area = result.getProperty("Area");
+        final String city = result.getProperty("City");
+        return UiUtil.getCommaSepFormat(UiUtil.getCommaSepFormat(street, area), city);
     }
 }

@@ -16,7 +16,8 @@ import com.whereyoudey.utils.UiUtil;
  */
 class EventsSearchForm extends SearchForm {
 
-    private TextField city;
+    public static final String FORM_TITLE = "Search Events";
+    protected TextField city;
     private String OPTION_HOME = "Home";
 
     EventsSearchForm(WhereYouDey midlet) {
@@ -24,10 +25,14 @@ class EventsSearchForm extends SearchForm {
     }
 
     protected void addFormFields() {
-        UiUtil.addBoldMediumFontLabel(topContainer, "Search Events");
+        UiUtil.addBoldMediumFontLabel(topContainer, getFormTitle());
         city = UiUtil.addTextFieldWithLabel(topContainer, "City");
         addSelectCityLink();
-        city.setText("Port Harcourt");
+//        city.setText("Port Harcourt");
+    }
+
+    protected String getFormTitle() {
+        return FORM_TITLE;
     }
 
     protected void moreSelectActionPerformed() {
