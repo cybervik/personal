@@ -6,6 +6,7 @@ package com.wbs;
 
 import com.wbs.form.EventsListForm;
 import com.sun.lwuit.Display;
+import com.sun.lwuit.Form;
 import javax.microedition.midlet.*;
 
 /**
@@ -23,12 +24,16 @@ public class SMSScheduler extends MIDlet {
     private void initialize() {
         Display.init(this);
         DISPLAY_WIDTH = Display.getInstance().getDisplayWidth();
-        eventsListForm = new EventsListForm();
+        eventsListForm = new EventsListForm(this);
     }
 
     public void pauseApp() {
     }
 
     public void destroyApp(boolean unconditional) {
+    }
+
+    public EventsListForm getListForm() {
+        return this.eventsListForm;
     }
 }
