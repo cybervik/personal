@@ -8,6 +8,7 @@ import com.sun.lwuit.Command;
 import com.sun.lwuit.Component;
 import com.sun.lwuit.Container;
 import com.sun.lwuit.Dialog;
+import com.sun.lwuit.Display;
 import com.sun.lwuit.Font;
 import com.sun.lwuit.Form;
 import com.sun.lwuit.Graphics;
@@ -17,11 +18,18 @@ import com.sun.lwuit.events.ActionEvent;
 import com.sun.lwuit.events.ActionListener;
 import com.sun.lwuit.geom.Rectangle;
 import com.sun.lwuit.layouts.BoxLayout;
+import com.sun.lwuit.layouts.FlowLayout;
 import com.sun.lwuit.layouts.GridLayout;
 import com.wbs.SMSScheduler;
+import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Vector;
+import javax.microedition.io.Connection;
+import javax.microedition.io.Connector;
+import javax.wireless.messaging.Message;
+import javax.wireless.messaging.MessageConnection;
+import javax.wireless.messaging.TextMessage;
 
 /**
  *
@@ -55,6 +63,7 @@ public class EventsListForm implements ActionListener {
     private EventEditForm eventEditForm;
     private SMSScheduler smsScheduler;
     private int COLOR_WHITE = 0xFFFFFF;
+    private Thread eventProcessor;
 
     public EventsListForm(SMSScheduler smsScheduler) {
         this.smsScheduler = smsScheduler;
@@ -101,10 +110,10 @@ public class EventsListForm implements ActionListener {
 
     protected void loadEvents() {
         addSchedulesRow("Name", "Due", true);
-        for (int i = 1; i < eventsData.size(); i++) {
+        for (int i = 0; i < eventsData.size(); i++) {
             final Event event = (Event) eventsData.elementAt(i);
             String name = event.getName();
-            String due = event.getDueDate().toString();
+            String due = event.getDueDate().getFullTime();
             addSchedulesRow(name, due, false);
         }
     }
@@ -129,10 +138,10 @@ public class EventsListForm implements ActionListener {
         form.addKeyListener(-1, this);
         form.addKeyListener(-2, this);
 //        form.setScrollable(true);
-//        form.setScrollableX(true);
+        form.setScrollableX(true);
         form.setScrollableY(true);
-        eventsData = new Vector();
-        addTestData();
+//        addTestData();
+        this.eventsData = smsScheduler.getEvents();
         selectedPos = (eventsData.size() > 0) ? 1 : 0;
     }
 
@@ -143,16 +152,23 @@ public class EventsListForm implements ActionListener {
     }
 
     private void addSchedulesRow(String name, String due, boolean isHeader) {
-        Container rowContainer = new Container(new GridLayout(1, 2));
-        addSchedulesColumn(name, rowContainer, isHeader);
-        addSchedulesColumn(due, rowContainer, isHeader);
+        Container rowContainer = new Container(new BoxLayout(BoxLayout.X_AXIS));
+        final int dateColWidth = getSmallNormalFont().stringWidth("12/12/2010 23:59");
+        addSchedulesColumn(name, rowContainer, isHeader, Display.getInstance().getDisplayWidth() - dateColWidth);
+        addSchedulesColumn(due, rowContainer, isHeader, dateColWidth);
         eventsList.addComponent(rowContainer);
     }
 
-    private void addSchedulesColumn(String name, Container rowContainer, boolean isHeader) {
+    private void addSchedulesColumn(String name, Container rowContainer, boolean isHeader, int width) {
         Label messageName = new Label(name);
+        messageName.setWidth(width);
+        messageName.setPreferredW(width);
         setSchedulesStyle(messageName, isHeader);
         rowContainer.addComponent(messageName);
+    }
+
+    private void log(final String name) {
+        System.out.println(name);
     }
 
     private void setSchedulesStyle(Label label, boolean isHeader) {
@@ -216,7 +232,7 @@ public class EventsListForm implements ActionListener {
     }
 
     private void selectSchedule() {
-        if (selectedPos <= 0 || selectedPos >= eventsData.size()) {
+        if (selectedPos <= 0 || selectedPos > eventsData.size()) {
             return;
         }
         Container scheduleRow = (Container) eventsList.getComponentAt(selectedPos);
@@ -244,6 +260,7 @@ public class EventsListForm implements ActionListener {
                 editSchedule();
             } else if (COMMAND_EXIT.equals(commandName)) {
                 if (showConfirm("Exit Confirm", "Are you sure you want to exit?")) {
+                    smsScheduler.destroyApp(true);
                     smsScheduler.notifyDestroyed();
                 }
             } else if (COMMAND_ABOUT.equals(commandName)) {
@@ -269,11 +286,11 @@ public class EventsListForm implements ActionListener {
     }
 
     private void editSchedule() {
-        final Event event = (Event) eventsData.elementAt(selectedPos);
+        final Event event = (Event) eventsData.elementAt(selectedPos-1);
         eventEditForm.show(event);
     }
 
-    void show() {
+    public void show() {
         show(false);
     }
 
@@ -286,7 +303,7 @@ public class EventsListForm implements ActionListener {
     }
 
     private void selectDown() {
-        if (selectedPos < (eventsData.size() - 1)) {
+        if (selectedPos < (eventsData.size())) {
             unSelectSchedule();
             selectedPos++;
             selectSchedule();
@@ -333,5 +350,41 @@ public class EventsListForm implements ActionListener {
 
     void saveEvent(Event event) {
         eventsData.setElementAt(event, selectedPos);
+    }
+
+    public void processPendingEvents() {
+        log("Sms sender has " + eventsData.size() + " events to process");
+        for (int i = 0; i < eventsData.size(); i++) {
+            final Event e = (Event) eventsData.elementAt(i);
+            final String message = e.getMessage();
+            if (e.isSelfEvent()) {
+                showInfo("Alert", message);
+                return;
+            }
+            final Vector recipients = e.getRecipients();
+            for (int j = 0; j < recipients.size(); j++) {
+                final PhoneEntry p = (PhoneEntry) recipients.elementAt(j);
+                final String telePhone = p.getTelePhone();
+                sendSms(message, telePhone);
+            }
+        }
+    }
+
+    private void sendSms(String message, String telePhone) {
+        try {
+            final String msg = "Sending sms to " + telePhone;
+            log(msg);
+            final String addr = "sms://" + telePhone;
+            final MessageConnection smsConnection = (MessageConnection) Connector.open(addr);
+            final TextMessage sms = (TextMessage) smsConnection.newMessage(MessageConnection.TEXT_MESSAGE, addr);
+            sms.setPayloadText(message);
+            smsConnection.send(sms);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public Vector getEvents() {
+        return this.eventsData;
     }
 }
