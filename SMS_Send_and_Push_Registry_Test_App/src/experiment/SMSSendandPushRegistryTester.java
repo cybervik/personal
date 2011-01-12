@@ -25,11 +25,17 @@ public class SMSSendandPushRegistryTester extends MIDlet {
     private TextField message;
     private Command okCmd;
     private Command exitCmd;
+    private PushRegistryService pushRegistryService;
+
+    public SMSSendandPushRegistryTester() {
+        pushRegistryService = new PushRegistryService();
+    }
 
     public void startApp() {
         final Display display = Display.getDisplay(this);
         form = new Form("Send SMS");
-        phoneNumber = new TextField("Phone Number: ", "9999999999", 15, TextField.NUMERIC);
+        phoneNumber = new TextField("Phone Number: ", "", 15, TextField.NUMERIC);
+        phoneNumber.setString("9999999");
         form.append(phoneNumber);
         message = new TextField("Message: ", "Hello World", 50, TextField.ANY);
         form.append(message);
@@ -43,7 +49,13 @@ public class SMSSendandPushRegistryTester extends MIDlet {
                 if (c == okCmd) {
                     sendSms();
                 } else if (c == exitCmd) {
-                    exit();
+                    Runnable r = new Runnable() {
+
+                        public void run() {
+                            exit();
+                        }
+                    };
+                    new Thread(r).start();
                 }
             }
         });
@@ -52,13 +64,12 @@ public class SMSSendandPushRegistryTester extends MIDlet {
 
     private void exit() {
         log("Exiting App");
-        registerForWakeUp();
         destroyApp(true);
         notifyDestroyed();
     }
 
     private void registerForWakeUp() {
-        PushRegistryService.registerAlarm();
+        pushRegistryService.registerAlarm(false);
     }
 
     private void sendSms() {
@@ -72,6 +83,7 @@ public class SMSSendandPushRegistryTester extends MIDlet {
     }
 
     public void destroyApp(boolean unconditional) {
+        registerForWakeUp();
     }
 
     private void log(String logMsg) {
