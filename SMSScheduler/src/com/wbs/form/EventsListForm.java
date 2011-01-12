@@ -4,6 +4,8 @@
  */
 package com.wbs.form;
 
+import com.wbs.utils.DialogUtil;
+import com.wbs.form.decorator.FormCommonDecorator;
 import com.sun.lwuit.Command;
 import com.sun.lwuit.Component;
 import com.sun.lwuit.Container;
@@ -18,16 +20,13 @@ import com.sun.lwuit.events.ActionEvent;
 import com.sun.lwuit.events.ActionListener;
 import com.sun.lwuit.geom.Rectangle;
 import com.sun.lwuit.layouts.BoxLayout;
-import com.sun.lwuit.layouts.FlowLayout;
-import com.sun.lwuit.layouts.GridLayout;
 import com.wbs.SMSScheduler;
-import java.io.IOException;
-import java.util.Calendar;
+import com.wbs.constant.Color;
+import com.wbs.form.decorator.FontUtil;
+import com.wbs.service.PersistenceService;
 import java.util.Date;
 import java.util.Vector;
-import javax.microedition.io.Connection;
 import javax.microedition.io.Connector;
-import javax.wireless.messaging.Message;
 import javax.wireless.messaging.MessageConnection;
 import javax.wireless.messaging.TextMessage;
 
@@ -38,98 +37,88 @@ import javax.wireless.messaging.TextMessage;
 public class EventsListForm implements ActionListener {
 
     public static final int ALIGNMENT_CENTER = 1;
-    public static final int COLOR_SCHEDULES_HEADER_BACKGROUND = 0x58ACFA;
-    public static final int COLOR_SCHEDULES_SELECTED_BACKGROUND = 0xF5A9A9;
+    public static final String APP_NAME = "SMS Scheduler";
     public static final String COMMAND_ADD = "Add";
     public static final String COMMAND_DELETE = "Delete";
     public static final String COMMAND_EXIT = "Exit";
     public static final String COMMAND_HELP = "Help";
     public static final String COMMAND_OPEN = "Open";
-    public static final String APP_NAME = "SMS Scheduler";
     public static final String COMMAND_ABOUT = "About";
     private Form form;
     private Container eventsList;
-//    String[][] schedulesData = {
-//        {"Event Name", "Reminder"},
-//        {"Nitin's Anniv", "Today 2:30 PM"},
-//        {"Pay bills", "10 Dec,2010 12:00 AM"},
-//        {"Pay LIC", "21 Jan,2010 12:00 AM"},
-//        {"Mediclaim Renew", "22 Dec,2010 12:00 AM"},
-//        {"Ramesh's Bday", "30 Apr,2010 12:00 AM"},
-//        {"Pay Vikram", "Tomorrow 1:00 AM"}
-//    };
-    Vector eventsData;
+    private Vector eventsData;
     private int selectedPos;
     private EventEditForm eventEditForm;
     private SMSScheduler smsScheduler;
-    private int COLOR_WHITE = 0xFFFFFF;
-    private Thread eventProcessor;
 
     public EventsListForm(SMSScheduler smsScheduler) {
         this.smsScheduler = smsScheduler;
         initialize();
         addHeader();
         addSpacer();
+        Event e = new Event("Test", "Tester", new Date());
+        eventsData.addElement(e);
+        e = new Event("India", "Where is it", new Date());
+        eventsData.addElement(e);
+        e = new Event("World", "Bengaluru is best", new Date());
+        eventsData.addElement(e);
+        e = new Event("Heloo", "Dude are u mad?", new Date());
+        eventsData.addElement(e);
         addEventsList();
         addMenuOptions();
         initEventForm();
         form.show();
-        selectSchedule();
-    }
-
-    protected void addTestData() {
-        addTestEvent("Ramesh's Bday", "Happy birthday Ramesh", new Date());
-        addTestEvent("Nitin's Anniv", "Happy anniversary Nitin", new Date());
-        addTestEvent("Pay Electricy", "Pay or go black", new Date());
-        addTestEvent("Refund XYZ", "Please refund the poor soul", new Date());
-        addTestEvent("Meet Vikram", "For supporting him on timely completion of project", new Date());
-        addTestEvent("Call Harish", "To wish him on his new baby", new Date());
-        addTestEvent("Health Checkup", "Health is Wealth", new Date());
-        addTestEvent("Invite for Wedding", "Please confirm your presence for my cousin's wedding on 10, Feb 2011", new Date());
-        addTestEvent("Decline new offer", "From new vendor", new Date());
-    }
-
-    protected void addTestEvent(final String name, final String message, final Date due) {
-        Event schedule = new Event(name, message, due);
-        eventsData.addElement(schedule);
+        selectEvent();
     }
 
     public void deleteEvent() {
-        if (showConfirm("Delete Cofirm", "Are you sure you want to delete?")) {
-            eventsData.removeElementAt(selectedPos);
-            final Component selectedRow = eventsList.getComponentAt(selectedPos);
-            eventsList.removeComponent(selectedRow);
-            if (selectedPos == eventsData.size()) {
-                selectedPos--;
-                selectUp();
-            } else {
-                selectSchedule();
-            }
+        if (selectedPos <= 0) {
+            DialogUtil.showInfo("Error", "Please select an event to delete");
+            return;
+        }
+        if (DialogUtil.showConfirm("Delete Cofirm", "Are you sure you want to delete?")) {
+            deleteEventAt(selectedPos);
         }
     }
 
-    protected void loadEvents() {
-        addSchedulesRow("Name", "Due", true);
+    private void deleteEventAt(int p) {
+        eventsData.removeElementAt(p - 1);
+        final Component selectedRow = eventsList.getComponentAt(p);
+        eventsList.removeComponent(selectedRow);
+        if (p == eventsData.size()) {
+            p--;
+            selectUp();
+        } else {
+            selectEvent();
+        }
+    }
+
+    private void loadEvents() {
+        addEventRow("Scheduled Events (" + eventsData.size() + ")", "", Color.WHITE);
+        int bgColor;
         for (int i = 0; i < eventsData.size(); i++) {
             final Event event = (Event) eventsData.elementAt(i);
             String name = event.getName();
             String due = event.getDueDate().getFullTime();
-            addSchedulesRow(name, due, false);
+            bgColor = getBgColor(i);
+            addEventRow(name, due, bgColor);
         }
     }
 
-    protected void reloadEvents() {
+    private int getBgColor(int i) {
+        int bgColor;
+        if (i % 2 == 0) {
+            bgColor = Color.EVENTLIST_ALTERNATE_BACKGROUND;
+        } else {
+            bgColor = Color.WHITE;
+        }
+        return bgColor;
+    }
+
+    private void reloadEvents() {
         eventsList.removeAll();
         loadEvents();
-        selectSchedule();
-    }
-
-    protected void showInfo(final String title, final String message) {
-        Dialog.show(title, message, "Back", null);
-    }
-
-    protected boolean showConfirm(final String title, final String message) {
-        return Dialog.show(title, message, "Ok", "Cancel");
+        selectEvent();
     }
 
     private void initialize() {
@@ -137,11 +126,10 @@ public class EventsListForm implements ActionListener {
         form.setLayout(new BoxLayout(BoxLayout.Y_AXIS));
         form.addKeyListener(-1, this);
         form.addKeyListener(-2, this);
-//        form.setScrollable(true);
         form.setScrollableX(true);
         form.setScrollableY(true);
-//        addTestData();
-        this.eventsData = smsScheduler.getEvents();
+        form = FormCommonDecorator.decorate(form);
+        this.eventsData = PersistenceService.readEvents();
         selectedPos = (eventsData.size() > 0) ? 1 : 0;
     }
 
@@ -151,47 +139,43 @@ public class EventsListForm implements ActionListener {
         form.addComponent(eventsList);
     }
 
-    private void addSchedulesRow(String name, String due, boolean isHeader) {
-        Container rowContainer = new Container(new BoxLayout(BoxLayout.X_AXIS));
-        final int dateColWidth = getSmallNormalFont().stringWidth("12/12/2010 23:59");
-        addSchedulesColumn(name, rowContainer, isHeader, Display.getInstance().getDisplayWidth() - dateColWidth);
-        addSchedulesColumn(due, rowContainer, isHeader, dateColWidth);
+    private void addEventRow(String name, String due, final int backgroundColor) {
+        Container rowContainer = new Container(new BoxLayout(BoxLayout.Y_AXIS));
+        rowContainer.getStyle().setBgPainter(new Painter() {
+
+            public void paint(Graphics g, Rectangle rect) {
+                g.setColor(backgroundColor);
+                g.fillRect(rect.getX(), rect.getY(), rect.getSize().getWidth(), rect.getSize().getHeight());
+            }
+        });
+        addEventRowItem(name, rowContainer, true, backgroundColor);
+        addEventRowItem(due, rowContainer, false, backgroundColor);
         eventsList.addComponent(rowContainer);
     }
 
-    private void addSchedulesColumn(String name, Container rowContainer, boolean isHeader, int width) {
+    private void addEventRowItem(String name, Container rowContainer, boolean highlightItem, final int backgroundColor) {
         Label messageName = new Label(name);
-        messageName.setWidth(width);
-        messageName.setPreferredW(width);
-        setSchedulesStyle(messageName, isHeader);
+        setStyle(messageName, highlightItem, backgroundColor);
         rowContainer.addComponent(messageName);
     }
 
-    private void log(final String name) {
-        System.out.println(name);
+    private void log(final String s) {
+        System.out.println("SMS Scheduler " + new CustomDate().getFullTime() + ":" + s);
     }
 
-    private void setSchedulesStyle(Label label, boolean isHeader) {
-        Font smallFont = getSmallNormalFont();
-        label.getStyle().setFont(smallFont);
-        if (isHeader) {
-            label.getStyle().setBgColor(COLOR_SCHEDULES_HEADER_BACKGROUND);
+    public void reloadEventsIfNecessary() {
+        if (this.form.isVisible()) {
+            reloadEvents();
         }
     }
 
-    private Font getSmallBoldFont() {
-        Font smallBoldFont = Font.createSystemFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_SMALL);
-        return smallBoldFont;
-    }
-
-    private Font getMediumBoldFont() {
-        Font mediumFont = Font.createSystemFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_MEDIUM);
-        return mediumFont;
-    }
-
-    private Font getSmallNormalFont() {
-        Font smallFont = Font.createSystemFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL);
-        return smallFont;
+    private void setStyle(Label label, boolean highlightItem, final int backgroundColor) {
+        label.getStyle().setBgColor(backgroundColor);
+        if (highlightItem) {
+            label.getStyle().setFont(FontUtil.getMediumBoldFont());
+        } else {
+            label.getStyle().setFont(FontUtil.getSmallItalicFont());
+        }
     }
 
     private void addMenuOptions() {
@@ -210,13 +194,13 @@ public class EventsListForm implements ActionListener {
         Label logo = new Label("WBS");
         logo.getStyle().setBgColor(0xB40404);
         logo.getStyle().setFgColor(0xFFFFFF);
-        Font bigBoldFont = Font.createSystemFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_LARGE);
-        logo.getStyle().setFont(bigBoldFont);
+        Font bigNormalFont = Font.createSystemFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_LARGE);
+        logo.getStyle().setFont(bigNormalFont);
         logo.setAlignment(Component.RIGHT);
         container.addComponent(logo);
 
         Label label = new Label(this.APP_NAME);
-        Font mediumFont = getMediumBoldFont();
+        Font mediumFont = FontUtil.getLargeBoldFont();
         label.getStyle().setFont(mediumFont);
         label.setAlignment(Component.LEFT);
         container.addComponent(label);
@@ -228,10 +212,13 @@ public class EventsListForm implements ActionListener {
     }
 
     private void addSpacer() {
-        form.addComponent(new Label(" "));
+        final Label label = new Label(" ");
+        label.getStyle().setFont(FontUtil.getSmallNormalFont());
+        label.setPreferredH(20);
+        form.addComponent(label);
     }
 
-    private void selectSchedule() {
+    private void selectEvent() {
         if (selectedPos <= 0 || selectedPos > eventsData.size()) {
             return;
         }
@@ -239,13 +226,13 @@ public class EventsListForm implements ActionListener {
         scheduleRow.getStyle().setBgPainter(new Painter() {
 
             public void paint(Graphics g, Rectangle rect) {
-                g.setColor(COLOR_SCHEDULES_SELECTED_BACKGROUND);
+                g.setColor(Color.EVENTLIST_SELECTEDITEM_BACKGROUND);
                 g.fillRect(rect.getX(), rect.getY(), rect.getSize().getWidth(), rect.getSize().getHeight());
             }
         });
         for (int i = 0; i < scheduleRow.getComponentCount(); i++) {
             Component scheduleCol = scheduleRow.getComponentAt(i);
-            scheduleCol.getStyle().setBgColor(COLOR_SCHEDULES_SELECTED_BACKGROUND);
+            scheduleCol.getStyle().setBgColor(Color.EVENTLIST_SELECTEDITEM_BACKGROUND);
         }
         scheduleRow.repaint();
         eventsList.repaint();
@@ -259,14 +246,13 @@ public class EventsListForm implements ActionListener {
             if (COMMAND_OPEN.equals(commandName)) {
                 editSchedule();
             } else if (COMMAND_EXIT.equals(commandName)) {
-                if (showConfirm("Exit Confirm", "Are you sure you want to exit?")) {
-                    smsScheduler.destroyApp(true);
-                    smsScheduler.notifyDestroyed();
+                if (DialogUtil.showConfirm("Exit Confirm", "Are you sure you want to exit?")) {
+                    smsScheduler.exit();
                 }
             } else if (COMMAND_ABOUT.equals(commandName)) {
-                showInfo("About", "SMS Schedule by WBS");
+                DialogUtil.showInfo("About", "SMS Schedule by WBS");
             } else if (COMMAND_HELP.equals(commandName)) {
-                showInfo("Help", "Help is comming soon.");
+                DialogUtil.showInfo("Help", "Help is comming soon.");
             } else if (COMMAND_ADD.equals(commandName)) {
                 eventEditForm.show();
             } else if (COMMAND_DELETE.equals(commandName)) {
@@ -286,7 +272,11 @@ public class EventsListForm implements ActionListener {
     }
 
     private void editSchedule() {
-        final Event event = (Event) eventsData.elementAt(selectedPos-1);
+        if (selectedPos <= 0) {
+            DialogUtil.showInfo("Error", "Please select an event to open");
+            return;
+        }
+        final Event event = (Event) eventsData.elementAt(selectedPos - 1);
         eventEditForm.show(event);
     }
 
@@ -298,7 +288,7 @@ public class EventsListForm implements ActionListener {
         if (selectedPos > 1) {
             unSelectSchedule();
             selectedPos--;
-            selectSchedule();
+            selectEvent();
         }
     }
 
@@ -306,7 +296,7 @@ public class EventsListForm implements ActionListener {
         if (selectedPos < (eventsData.size())) {
             unSelectSchedule();
             selectedPos++;
-            selectSchedule();
+            selectEvent();
         }
     }
 
@@ -315,16 +305,23 @@ public class EventsListForm implements ActionListener {
             return;
         }
         Container scheduleRow = (Container) eventsList.getComponentAt(selectedPos);
+        final int bgColor = getBgColor(selectedPos - 1);
         scheduleRow.getStyle().setBgPainter(new Painter() {
 
             public void paint(Graphics g, Rectangle rect) {
-                g.setColor(COLOR_WHITE);
+                g.setColor(bgColor);
                 g.fillRect(rect.getX(), rect.getY(), rect.getSize().getWidth(), rect.getSize().getHeight());
+                g.setColor(Color.BLACK);
+                final int x1 = rect.getX();
+                final int y1 = rect.getY() + rect.getSize().getHeight();
+                final int x2 = x1 + rect.getSize().getWidth();
+                final int y2 = y1;
+                g.drawLine( x1, y1, x2, y2);
             }
         });
         for (int i = 0; i < scheduleRow.getComponentCount(); i++) {
             Component scheduleCol = scheduleRow.getComponentAt(i);
-            scheduleCol.getStyle().setBgColor(COLOR_WHITE);
+            scheduleCol.getStyle().setBgColor(bgColor);
         }
         scheduleRow.repaint();
         eventsList.repaint();
@@ -349,25 +346,7 @@ public class EventsListForm implements ActionListener {
     }
 
     void saveEvent(Event event) {
-        eventsData.setElementAt(event, selectedPos);
-    }
-
-    public void processPendingEvents() {
-        log("Sms sender has " + eventsData.size() + " events to process");
-        for (int i = 0; i < eventsData.size(); i++) {
-            final Event e = (Event) eventsData.elementAt(i);
-            final String message = e.getMessage();
-            if (e.isSelfEvent()) {
-                showInfo("Alert", message);
-                return;
-            }
-            final Vector recipients = e.getRecipients();
-            for (int j = 0; j < recipients.size(); j++) {
-                final PhoneEntry p = (PhoneEntry) recipients.elementAt(j);
-                final String telePhone = p.getTelePhone();
-                sendSms(message, telePhone);
-            }
-        }
+        eventsData.setElementAt(event, selectedPos - 1);
     }
 
     private void sendSms(String message, String telePhone) {
@@ -379,7 +358,9 @@ public class EventsListForm implements ActionListener {
             final TextMessage sms = (TextMessage) smsConnection.newMessage(MessageConnection.TEXT_MESSAGE, addr);
             sms.setPayloadText(message);
             smsConnection.send(sms);
+            DialogUtil.showInfo("Alert", "Sent sms to " + telePhone + " with message \"" + message + "\"");
         } catch (Exception ex) {
+            DialogUtil.showInfo("Error", "Delivery of sms to " + telePhone + " with message \"" + message + "\" failed with error " + ex.getMessage());
             ex.printStackTrace();
         }
     }

@@ -4,6 +4,7 @@
  */
 package com.wbs.form;
 
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Vector;
 
@@ -27,7 +28,7 @@ public class Event {
         dueDate = new CustomDate();
         selfEvent = true;
         recurringPeriod = "";
-        recurringType = "None";
+        recurringType = EventEditForm.RECURRING_NONE;
         recipients = new Vector();
     }
 
@@ -142,7 +143,7 @@ public class Event {
                 setDueDate(new Date(Long.parseLong(ele)));
                 break;
             case 4:
-                setSelfEvent("true".equals(ele)?true:false);
+                setSelfEvent("true".equals(ele) ? true : false);
                 break;
             case 5:
                 setRecurringPeriod(ele);
@@ -151,8 +152,48 @@ public class Event {
                 setRecurringType(ele);
                 break;
             case 7:
-                setRecipients(new Vector());
+                recipientsFromFormat(ele);
                 break;
+        }
+    }
+
+    public boolean isRecurring() {
+        return !this.recurringType.equals(EventEditForm.RECURRING_NONE);
+    }
+
+    public void updateDueDate() {
+        dueDate.add(recurringType, recurringPeriod);
+    }
+
+    public boolean isDue() {
+        final Date now = new Date();
+        return (this.dueDate.getDate().getTime() <= now.getTime());
+    }
+
+    private void recipientsFromFormat(String dataStr) {
+        final char[] cArr = dataStr.toCharArray();
+        String ele = null;
+        int pos = 0;
+        for (int i = 0; i < cArr.length; i++) {
+            final char c = cArr[i];
+            switch (c) {
+                case '{':
+                    ele = "";
+                    pos++;
+                    break;
+                case '}':
+                    int len = ele.length();
+                    int p = ele.indexOf("_");
+                    if (p != -1 && p != len - 1) {
+                        String name = ele.substring(0, p);
+                        String tel = ele.substring(p + 1, len);
+                        this.recipients.addElement(new PhoneEntry(name, tel));
+                    }
+                    break;
+                default:
+                    ele += c;
+                    break;
+            }
         }
     }
 }

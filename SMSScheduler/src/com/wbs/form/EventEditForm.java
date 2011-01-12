@@ -4,6 +4,7 @@
  */
 package com.wbs.form;
 
+import com.wbs.utils.DialogUtil;
 import com.sun.lwuit.Button;
 import com.sun.lwuit.CheckBox;
 import com.sun.lwuit.ComboBox;
@@ -27,10 +28,13 @@ import com.sun.lwuit.layouts.BoxLayout;
 import com.sun.lwuit.layouts.FlowLayout;
 import com.sun.lwuit.list.DefaultListCellRenderer;
 import com.sun.lwuit.list.DefaultListModel;
+import com.sun.lwuit.list.ListCellRenderer;
 import com.sun.lwuit.list.ListModel;
 import com.sun.lwuit.plaf.Border;
 import com.sun.lwuit.plaf.Style;
 import com.wbs.SMSScheduler;
+import com.wbs.constant.Color;
+import com.wbs.form.decorator.FormCommonDecorator;
 import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date;
@@ -49,9 +53,15 @@ import javax.microedition.pim.PIMList;
 class EventEditForm implements ActionListener {
 
     public static final String OPTION_SELECT = "Select";
+    public static final String RECURRING_DAY = "Day";
+    public static final String RECURRING_HOUR = "Hour";
+    public static final String RECURRING_MINUTE = "Minute";
+    public static final String RECURRING_MONTH = "Month";
+    public static final String RECURRING_NONE = "None";
+    public static final String RECURRING_WEEK = "Week";
+    public static final String RECURRING_YEAR = "Year";
     public static final String SELECT_DUE_DATE = "DueDate";
-    private static final int COLOR_WHITE = 0xFFFFFF;
-    private static final String[] RECURRING_TYPES = {"None", "Minute", "Hour", "Day", "Week", "Month", "Year"};
+    private static final String[] RECURRING_TYPES = {RECURRING_NONE, RECURRING_MINUTE, RECURRING_HOUR, RECURRING_DAY, RECURRING_WEEK, RECURRING_MONTH, RECURRING_YEAR};
     private static final String[] RECIPIENTS_TEST_DATA = {"Abhay Shenvi", "+919945678903", "Vikram Subbarao", "Ramesh Home"};
     private final SMSScheduler smsScheduler;
     private Form form = null;
@@ -88,10 +98,16 @@ class EventEditForm implements ActionListener {
         addCommands();
         addSelfEventActionListener();
         setFocusNavigations();
+        form = FormCommonDecorator.decorate(form);
     }
 
     protected String getContactField(final Contact c, final int field) {
-        return c.getString(field, 0);
+        String v = "";
+        try {
+            v = c.getString(field, 0);
+        } catch (Exception e) {
+        }
+        return v;
     }
 
     protected Vector getContacts() {
@@ -205,13 +221,16 @@ class EventEditForm implements ActionListener {
         final String eventName = this.eventName.getText();
         final String eventMessage = this.eventMessage.getText();
         if (eventName.trim().equalsIgnoreCase("")) {
-            listForm.showInfo("Error", "Please enter event name");
+            DialogUtil.showInfo("Error", "Please enter event name");
             return false;
         } else if (eventMessage.trim().equalsIgnoreCase("")) {
-            listForm.showInfo("Error", "Please enter event message");
+            DialogUtil.showInfo("Error", "Please enter event message");
             return false;
         } else if (!selfEvent.isSelected() && recipients.isEmpty()) {
-            listForm.showInfo("Error", "Please add a recipient");
+            DialogUtil.showInfo("Error", "Please add a recipient");
+            return false;
+        } else if (!isInt(recurringPeriod.getText())) {
+            DialogUtil.showInfo("Error", "Please enter a valid recurring period");
             return false;
         } else {
             return true;
@@ -226,25 +245,37 @@ class EventEditForm implements ActionListener {
     }
 
     private ComboBox getComboBox(final int size) {
-        final ComboBox cb = new ComboBox();
         final Font smallBoldFont = getSmallBoldFont();
+        final ComboBox cb = new ComboBox();
+//        cb.getStyle().setFont(getSmallNormalFont());
+//        cb.getStyle().setBgColor(Colors.WHITE);
+//        cb.getSelectedStyle().setFont(smallBoldFont);
+//        cb.getSelectedStyle().setBgColor(EventsListForm.COLOR_SCHEDULES_SELECTED_BACKGROUND);
         DefaultListCellRenderer renderer = (DefaultListCellRenderer) cb.getRenderer();
+        final ListCellRenderer renderer1 = cb.getRenderer();
         renderer.getStyle().setFont(getSmallNormalFont());
-        renderer.getStyle().setBgColor(COLOR_WHITE);
+        renderer.getStyle().setBgColor(Color.WHITE);
         renderer.getSelectedStyle().setFont(smallBoldFont);
-        renderer.getSelectedStyle().setBgColor(EventsListForm.COLOR_SCHEDULES_SELECTED_BACKGROUND);
+        renderer.getSelectedStyle().setBgColor(Color.EVENTLIST_SELECTEDITEM_BACKGROUND);
+//        renderer.setPreferredW(smallBoldFont.stringWidth("1000"));
         for (int i = 0; i < size; i++) {
             cb.addItem(String.valueOf(i));
         }
-
         return cb;
+    }
+
+    private void setAddRecipientsState() {
+        if (!selfEvent.isSelected()) {
+            addRecpientsButton.setEnabled(true);
+        } else {
+            addRecpientsButton.setEnabled(false);
+        }
     }
 
     private void setFocusNavigations() {
         setFocusNavigation(eventName, eventMessage, recurringType);
         setFocusNavigation(eventMessage, selfEvent, eventName);
-        setFocusNavigation(selfEvent, dueButton, eventMessage);
-        setFocusNavigation(dueButton, hour, selfEvent);
+        setSelfEventFocusNavigations();
         setFocusNavigation(hour, minute, dueButton);
         setFocusNavigation(minute, recurringPeriod, hour);
         setFocusNavigation(recurringPeriod, recurringType, minute);
@@ -261,21 +292,25 @@ class EventEditForm implements ActionListener {
         selfEvent.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent evt) {
-                if (!selfEvent.isSelected()) {
-                    addRecpientsButton.setEnabled(true);
-                    setFocusNavigation(selfEvent, addRecpientsButton, eventMessage);
-                    setFocusNavigation(addRecpientsButton, dueButton, selfEvent);
-                    setFocusNavigation(dueButton, recurringPeriod, addRecpientsButton);
-                } else {
-                    addRecpientsButton.setEnabled(false);
-                    setFocusNavigation(selfEvent, dueButton, eventMessage);
-                    setFocusNavigation(dueButton, recurringPeriod, selfEvent);
-                }
+                setSelfEventFocusNavigations();
                 recipientsContainer.refreshTheme();
                 recipientsContainer.repaint();
                 form.show();
             }
         });
+    }
+
+    private void setSelfEventFocusNavigations() {
+        if (!selfEvent.isSelected()) {
+            addRecpientsButton.setEnabled(true);
+            setFocusNavigation(selfEvent, addRecpientsButton, eventMessage);
+            setFocusNavigation(addRecpientsButton, dueButton, selfEvent);
+            setFocusNavigation(dueButton, recurringPeriod, addRecpientsButton);
+        } else {
+            addRecpientsButton.setEnabled(false);
+            setFocusNavigation(selfEvent, dueButton, eventMessage);
+            setFocusNavigation(dueButton, recurringPeriod, selfEvent);
+        }
     }
 
     private void addRecipients() {
@@ -285,12 +320,12 @@ class EventEditForm implements ActionListener {
         dc.setShowNumbers(false);
         final Style style = dc.getStyle();
         style.setFont(getSmallNormalFont());
-        style.setBgColor(COLOR_WHITE);
+        style.setBgColor(Color.WHITE);
         style.setMargin(0, 0, 0, 0);
         style.setPadding(0, 0, 0, 0);
         final Style selectedStyle = dc.getSelectedStyle();
         selectedStyle.setFont(getSmallNormalFont());
-        selectedStyle.setBgColor(COLOR_WHITE);
+        selectedStyle.setBgColor(Color.WHITE);
         selectedStyle.setMargin(0, 0, 0, 0);
         selectedStyle.setPadding(0, 0, 0, 0);
         recipientsList.setFocusable(false);
@@ -307,6 +342,11 @@ class EventEditForm implements ActionListener {
             }
         });
         form.addComponent(recipientsContainer);
+    }
+
+    private void setInitialFocus() {
+        form.scrollComponentToVisible(header);
+        form.scrollComponentToVisible(eventName);
     }
 
     private void showRecipientsDialog() {
@@ -424,10 +464,10 @@ class EventEditForm implements ActionListener {
         recurringType = new ComboBox(RECURRING_TYPES);
         DefaultListCellRenderer renderer = (DefaultListCellRenderer) recurringType.getRenderer();
         renderer.getStyle().setFont(getSmallNormalFont());
-        renderer.getStyle().setBgColor(COLOR_WHITE);
+        renderer.getStyle().setBgColor(Color.WHITE);
         renderer.getSelectedStyle().setFont(getSmallBoldFont());
-        renderer.getSelectedStyle().setBgColor(EventsListForm.COLOR_SCHEDULES_SELECTED_BACKGROUND);
-        recurringType.setSelectedItem("None");
+        renderer.getSelectedStyle().setBgColor(Color.EVENTLIST_SELECTEDITEM_BACKGROUND);
+        recurringType.setSelectedItem(RECURRING_NONE);
         form.addComponent(recurringType);
     }
 
@@ -454,7 +494,7 @@ class EventEditForm implements ActionListener {
         header = new Container(new BoxLayout((BoxLayout.X_AXIS)));
         Label logo = new Label("WBS");
         logo.getStyle().setBgColor(0xB40404);
-        logo.getStyle().setFgColor(COLOR_WHITE);
+        logo.getStyle().setFgColor(Color.WHITE);
         Font bigBoldFont = Font.createSystemFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_LARGE);
         logo.getStyle().setFont(bigBoldFont);
         logo.setAlignment(Component.RIGHT);
@@ -495,7 +535,6 @@ class EventEditForm implements ActionListener {
         this.selfEvent.setSelected(event.isSelfEvent());
         this.recurringPeriod.setText(event.getRecurringPeriod());
         this.recurringType.setSelectedItem(event.getRecurringType());
-        this.eventName.setFocus(true);
         this.recipients = event.getRecipients();
         clearRecipientsList();
         if (!recipients.isEmpty()) {
@@ -505,8 +544,9 @@ class EventEditForm implements ActionListener {
             PhoneEntry r = (PhoneEntry) recipients.elementAt(i);
             recipientsList.addItem(r.getDisplayableText());
         }
+        setAddRecipientsState();
         setFocusNavigations();
-        form.scrollComponentToVisible(header);
+        setInitialFocus();
         this.form.show();
     }
 
@@ -564,8 +604,7 @@ class EventEditForm implements ActionListener {
                 }
             } else if ("Exit".equals(commandName)) {
                 if (showConfirm("Exit Confirm", "Are you sure you want to exit?")) {
-                    smsScheduler.destroyApp(true);
-                    smsScheduler.notifyDestroyed();
+                    smsScheduler.exit();
                 }
             } else if ("About".equals(commandName)) {
                 showInfo("About", "SMS Schedule by WBS");
@@ -591,17 +630,17 @@ class EventEditForm implements ActionListener {
         this.editMode = false;
         this.eventName.setText("");
         this.eventMessage.setText("");
-        this.selfEvent.setSelected(false);
+        this.selfEvent.setSelected(true);
         this.due.setText("dd/mm/yyyy");
         this.hour.setSelectedItem("0");
         this.minute.setSelectedItem("0");
         this.recurringPeriod.setText("");
-        this.recurringType.setSelectedItem("None");
-        this.eventName.setFocus(true);
+        this.recurringType.setSelectedItem(RECURRING_NONE);
         this.recipients.removeAllElements();
         clearRecipientsList();
+        setAddRecipientsState();
         setFocusNavigations();
-        form.scrollComponentToVisible(header);
+        setInitialFocus();
         this.form.show();
     }
 
@@ -631,5 +670,17 @@ class EventEditForm implements ActionListener {
 
     private int getInt(String s) {
         return Integer.parseInt(s);
+    }
+
+    private boolean isInt(String recurringPeriod) {
+        if (recurringPeriod == null || "".equals(recurringPeriod.trim())) {
+            return true;
+        }
+        try {
+            Integer.parseInt(recurringPeriod);
+            return true;
+        } catch (NumberFormatException numberFormatException) {
+        }
+        return false;
     }
 }
