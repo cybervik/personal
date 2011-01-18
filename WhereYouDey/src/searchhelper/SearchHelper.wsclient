@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsclientconfig serviceType="jsr-172" version="1.0">
+    <client>
+        <project>WhereYouDey</project>
+        <class location="${src.dir}" type="searchhelper.SearchHelper"/>
+        <property name="DataBinding" value="false"/>
+        <property name="cldc11" value="true"/>
+    </client>
+    <services>
+        <service file="SearchHelper.asmx.wsdl" url="http://www.whereyoudey.com/WhereYouDeyWebServices/SearchHelper.asmx?WSDL"/>
+    </services>
+</wsclientconfig>

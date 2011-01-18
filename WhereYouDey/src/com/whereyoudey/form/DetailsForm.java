@@ -12,20 +12,33 @@ import com.sun.lwuit.Dialog;
 import com.sun.lwuit.Display;
 import com.sun.lwuit.Font;
 import com.sun.lwuit.Form;
+import com.sun.lwuit.Graphics;
 import com.sun.lwuit.Image;
 import com.sun.lwuit.Label;
+import com.sun.lwuit.Painter;
+import com.sun.lwuit.TextArea;
 import com.sun.lwuit.TextField;
 import com.sun.lwuit.events.ActionEvent;
 import com.sun.lwuit.events.ActionListener;
+import com.sun.lwuit.events.FocusListener;
+import com.sun.lwuit.geom.Rectangle;
 import com.sun.lwuit.layouts.BorderLayout;
 import com.sun.lwuit.layouts.BoxLayout;
+import com.sun.lwuit.layouts.GridLayout;
 import com.sun.midp.io.HttpUrl;
 import com.whereyoudey.WhereYouDey;
 import com.whereyoudey.service.helper.Result;
 import com.whereyoudey.form.component.Section;
+import com.whereyoudey.maps.directions.DrivingDirections;
+import com.whereyoudey.maps.directions.Route;
+import com.whereyoudey.maps.directions.Steps;
+import com.whereyoudey.service.SearchService;
+import com.whereyoudey.utils.DialogUtil;
+import com.whereyoudey.utils.ExtendedDialog;
 import com.whereyoudey.utils.UiUtil;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Vector;
 import javax.microedition.io.ConnectionNotFoundException;
 import javax.microedition.io.Connector;
 import javax.microedition.io.HttpConnection;
@@ -49,7 +62,7 @@ abstract class DetailsForm implements ActionListener {
     public static final String LINK_OFFERS = "Offers";
     public static final String LINK_OFFERS_URL = "http://whereyoudey.com/offers";
     public static final String LINK_VIDEO_AUDIO = "Video/Audio";
-    protected Form form;
+    protected ExtendedForm form;
     private Label header;
     protected final WhereYouDey midlet;
     protected Result result;
@@ -61,7 +74,12 @@ abstract class DetailsForm implements ActionListener {
     private TextField toDriving;
     private Button getDrivingDirectionsButton;
     private Label mapImage;
-    private Dialog mapImageDialog;
+    private ExtendedDialog mapImageDialog;
+    final Command selectCommand = new Command(OPTION_SELECT);
+    private int mapWidth;
+    private int mapHeight;
+    private ExtendedDialog drivingDirectionsDialog;
+    private TextArea drivingDirectionsArea;
 
     public DetailsForm(WhereYouDey midlet, ResultForm callingForm) {
         this.midlet = midlet;
@@ -76,32 +94,49 @@ abstract class DetailsForm implements ActionListener {
     protected void addFormElements() throws NumberFormatException {
         addBasicInfo();
         addSections();
+        final Label dummy = new Label(" ");
+        dummy.setFocusable(true);
+        dummy.setNextFocusDown(header);
+        form.addComponent(dummy);
     }
 
     protected abstract String getHeaderProperty();
 
     protected abstract String getPhoneProperty();
 
-    private void call() {
-        try {
-            final String phoneNumber = result.getProperty(getPhoneProperty());
-            if ("".equals(phoneNumber.trim())) {
-                showDialog("Phone number not found in this result.");
-            } else {
-                midlet.platformRequest("tel:" + phoneNumber);
+    private void addDrivingDirectionsInfo(final String text, int fontSize, int fontStyle) {
+        final Label label = new Label(text);
+        label.getStyle().setFont(Font.createSystemFont(Font.FACE_SYSTEM, fontStyle, fontSize));
+        label.getSelectedStyle().setFont(Font.createSystemFont(Font.FACE_SYSTEM, fontStyle, fontSize));
+        drivingDirectionsDialog.addComponent(label);
+    }
+
+    private void addLink(final String linkName) {
+        final Label link = UiUtil.getLink(linkName);
+        links.addComponent(link);
+        link.addFocusListener(new FocusListener() {
+
+            public void focusGained(Component cmpnt) {
+                form.addCommand(selectCommand, form.getCommandCount());
             }
-        } catch (ConnectionNotFoundException ex) {
-            ex.printStackTrace();
+
+            public void focusLost(Component cmpnt) {
+                form.removeCommand(selectCommand);
+            }
+        });
+    }
+
+    private void call() {
+        final String phoneNumber = result.getProperty(getPhoneProperty());
+        if (UiUtil.isEmpty(phoneNumber)) {
+            DialogUtil.showInfo("Error", "Phone number not found in this result.");
+            return;
         }
+        midlet.requestPlatformService("tel:" + phoneNumber);
     }
 
     private void exit() {
-        try {
-            midlet.destroyApp(true);
-            midlet.notifyDestroyed();
-        } catch (MIDletStateChangeException ex) {
-            ex.printStackTrace();
-        }
+        midlet.exit();
     }
 
     private void goBack() {
@@ -109,11 +144,11 @@ abstract class DetailsForm implements ActionListener {
     }
 
     private void goHome() {
-        midlet.getSearchForm().show();
+        midlet.getSearchForm().resetAndShow();
     }
 
     private void initForm() {
-        form = new Form();
+        form = new ExtendedForm();
         form.setWidth(Display.getInstance().getDisplayWidth());
         form.setLayout(new BoxLayout(BoxLayout.Y_AXIS));
         form.setScrollableX(true);
@@ -124,7 +159,6 @@ abstract class DetailsForm implements ActionListener {
         form.addCommand(new Command(OPTION_EXIT));
         form.addCommand(new Command(OPTION_HOME));
         form.addCommand(new Command(OPTION_CALL));
-        form.addCommand(new Command(OPTION_SELECT));
         form.addCommandListener(this);
     }
 
@@ -140,6 +174,9 @@ abstract class DetailsForm implements ActionListener {
         header = new Label("");
         header.getStyle().setBgColor(0x000000);
         header.getStyle().setFgColor(0xffffff);
+        header.getSelectedStyle().setBgColor(0x000000);
+        header.getSelectedStyle().setFgColor(0xffffff);
+        header.setFocusable(true);
         form.addComponent(header);
     }
 
@@ -151,6 +188,11 @@ abstract class DetailsForm implements ActionListener {
     }
 
     protected abstract void initResult(Result result);
+
+    private boolean isBanner(Result result) {
+        final String banner = result.getProperty("Banner");
+        return !UiUtil.isEmpty(banner);
+    }
 
     private void setHeader(Result result) {
         final String bizName = result.getProperty(getHeaderProperty());
@@ -167,7 +209,6 @@ abstract class DetailsForm implements ActionListener {
         try {
             img = Image.createImage(imagePath);
             img = img.scaledHeight(imageWidth);
-
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -177,8 +218,18 @@ abstract class DetailsForm implements ActionListener {
 
     public void init(Result result) {
         this.result = result;
-        setHeader(result);
-        initResult(result);
+        if (isBanner(result)) {
+            final String bannerId = result.getProperty("ID");
+            this.result = new SearchService().getBannerDetails(bannerId);
+            if (this.result == null) {
+                throw new ApplicationException("Could not retrieve advertisement details");
+            }
+        }
+        setHeader(this.result);
+        initResult(this.result);
+        header.setFocus(true);
+        form.setFocused(header);
+        form.scrollComponentToVisible(header);
         form.show();
     }
 
@@ -203,40 +254,97 @@ abstract class DetailsForm implements ActionListener {
         }
     }
 
-    private void showDialog(String message) {
-        Dialog.show(null, message, "Ok", null);
-    }
-
     protected void selectAction(String focussedName) {
         if (focussedName.equals(LINK_MAPS)) {
             try {
                 HttpConnection conn = (HttpConnection) Connector.open("http://maps.google.com/maps/api/staticmap?"
                                                                       + "center=" + UiUtil.urlEncode(getAddress())
-                                                                      + "&zoom=13"
-                                                                      + "&size=" + Display.getInstance().getDisplayWidth() + "x" + Display.getInstance().getDisplayHeight()
+                                                                      + "&zoom=12"
+                                                                      + "&size=" + (mapWidth)
+                                                                      + "x" + (mapHeight)
                                                                       + "&sensor=false");
                 conn.setRequestMethod(HttpConnection.GET);
                 InputStream input = conn.openInputStream();
-                Image img = Image.createImage(input);
+                final Image img = Image.createImage(input);
                 mapImage.setIcon(img);
-                mapImageDialog.showPacked(BorderLayout.CENTER, true);
+                mapImageDialog.showExtendedDialog();
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
         } else if (focussedName.equals(LINK_VIDEO_AUDIO)) {
-            platformRequest(LINK_AUDIO_VIDEO_URL);
+            midlet.requestPlatformService(LINK_AUDIO_VIDEO_URL);
         } else if (focussedName.equals(LINK_OFFERS)) {
-            platformRequest(LINK_OFFERS_URL);
+            midlet.requestPlatformService(LINK_OFFERS_URL);
         } else if (focussedName.equals(LINK_DRIVING_DIRECTIONS)) {
+            showDrivingDirections();
         } else {
             selectActionPerformed(focussedName);
         }
     }
 
-    protected void platformRequest(final String url) {
+    private void showDrivingDirections() {
         try {
-            this.midlet.platformRequest(url);
-        } catch (ConnectionNotFoundException ex) {
+            drivingDirectionsDialog.removeAll();
+            ExtendedDialog drivingDirectionsInfo = new ExtendedDialog("Get driving directions", "", Dialog.TYPE_CONFIRMATION);
+            drivingDirectionsInfo.setLayout(new BoxLayout((BoxLayout.Y_AXIS)));
+            final Label fromLabel = new Label("From: ");
+            fromLabel.getStyle().setFont(FontUtil.getMediumBoldFont());
+            fromLabel.getSelectedStyle().setFont(FontUtil.getMediumBoldFont());
+            drivingDirectionsInfo.addComponent(fromLabel);
+            final TextField fromAddrField = new TextField();
+            fromAddrField.getStyle().setFont(FontUtil.getMediumNormalFont());
+            fromAddrField.getSelectedStyle().setFont(FontUtil.getMediumNormalFont());
+            drivingDirectionsInfo.addComponent(fromAddrField);
+            final Label toLabel = new Label("To: ");
+            toLabel.getStyle().setFont(FontUtil.getMediumBoldFont());
+            toLabel.getSelectedStyle().setFont(FontUtil.getMediumBoldFont());
+            drivingDirectionsInfo.addComponent(toLabel);
+            final Label toAddr = new Label(getAddress());
+            toAddr.getStyle().setFont(FontUtil.getMediumNormalFont());
+            toAddr.getSelectedStyle().setFont(FontUtil.getMediumNormalFont());
+            drivingDirectionsInfo.addComponent(toAddr);
+            boolean userChoice = drivingDirectionsInfo.showExtendedDialog();
+            do {
+                if (!userChoice) {
+                    return;
+                }
+                if (UiUtil.isEmpty(fromAddrField.getText())) {
+                    DialogUtil.showInfo("Error", "Please enter from address.");
+                    userChoice = drivingDirectionsInfo.showExtendedDialog();
+                }
+            } while (UiUtil.isEmpty(fromAddrField.getText()));
+            DrivingDirections dd = new DrivingDirections(fromAddrField.getText(), getAddress());
+            final Vector routes = dd.getRoutes();
+            Route r = (Route) dd.getRoutes().elementAt(0);
+            addDrivingDirectionsTitle("Driving directions to " + r.getEndAddress());
+//            addDrivingDirectionsInfo("Driving directions to " + r.getEndAddress(), Font.SIZE_MEDIUM, Font.STYLE_BOLD);
+            DrivingDirectionsSummary summary = new DrivingDirectionsSummary();
+            summary.addLine("Route Summary: " + r.getSummary());
+            summary.addLine("Total Time: " + r.getDuration().getText());
+            summary.addLine("Total Distance: " + r.getDistance().getText());
+            summary.addHorizontalLine();
+            addDrivingDirectionsSummary(summary);
+//            addDrivingDirectionsInfo("Route Summary: " + r.getSummary(), Font.SIZE_SMALL, Font.STYLE_PLAIN);
+//            addDrivingDirectionsInfo("Total Time: "+r.getDuration().getText(), Font.SIZE_SMALL, Font.STYLE_PLAIN);
+//            addDrivingDirectionsInfo("Total Distance: "+r.getDistance().getText(), Font.SIZE_SMALL, Font.STYLE_PLAIN);
+//            addDrivingDirectionsInfo(" ", Font.SIZE_MEDIUM, Font.STYLE_PLAIN);
+            addDrivingDirectionsMarker(r.getStartAddress(), "a");
+//            addDrivingDirectionsInfo(r.getStartAddress(), Font.SIZE_SMALL, Font.STYLE_BOLD);
+//            addDrivingDirectionsInfo("  ", Font.SIZE_MEDIUM, Font.STYLE_PLAIN);
+            Vector v = r.getSteps();
+            for (int i = 0; i < v.size(); i++) {
+                Steps s = (Steps) v.elementAt(i);
+                final String stepDetails = (i + 1) + ". " + s.getHtmlInstructions();
+                final String stepDetails2 = s.getDistance().getText() + "             " + s.getDuration().getText();
+                addDrivingDirectionsRoute(i + 1, s.getHtmlInstructions(), s.getDistance().getText(), s.getDuration().getText());
+//                addDrivingDirectionsInfo(stepDetails, Font.SIZE_SMALL, Font.STYLE_BOLD);
+//                addDrivingDirectionsInfo(stepDetails2, Font.SIZE_SMALL, Font.STYLE_PLAIN);
+//                addDrivingDirectionsInfo("  ", Font.SIZE_MEDIUM, Font.STYLE_PLAIN);
+            }
+            addDrivingDirectionsMarker(r.getEndAddress(), "b");
+//            addDrivingDirectionsInfo(r.getEndAddress(), Font.SIZE_SMALL, Font.STYLE_BOLD);
+            drivingDirectionsDialog.showExtendedDialog();
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
@@ -252,45 +360,85 @@ abstract class DetailsForm implements ActionListener {
 
     private void addLinksSection() {
         links = new Section(form, "", "");
-        links.addComponents(UiUtil.getLink(LINK_MAPS));
+        addLink(LINK_MAPS);
         addMapSection();
-        links.addComponents(UiUtil.getLink(LINK_VIDEO_AUDIO));
-        links.addComponents(UiUtil.getLink(LINK_OFFERS));
-        links.addComponents(UiUtil.getLink(LINK_DRIVING_DIRECTIONS));
+        addLink(LINK_DRIVING_DIRECTIONS);
         addDrivingDirectionsSection();
     }
 
     protected void addDrivingDirectionsSection() {
-        drivingDirections = new Container(new BoxLayout(BoxLayout.Y_AXIS));
-        fromDriving = UiUtil.addTextFieldWithLabel(drivingDirections, "From");
-        toDriving = UiUtil.addTextFieldWithLabel(drivingDirections, "To");
-        getDrivingDirectionsButton = new Button("Go");
-        getDrivingDirectionsButton.getStyle().setFont(UiUtil.getFont(Font.STYLE_PLAIN, Font.SIZE_SMALL));
-        getDrivingDirectionsButton.getSelectedStyle().setFont(UiUtil.getFont(Font.STYLE_BOLD, Font.SIZE_SMALL));
-        getDrivingDirectionsButton.addActionListener(new ActionListener() {
-
-            public void actionPerformed(ActionEvent evt) {
-            }
-        });
-        drivingDirections.addComponent(getDrivingDirectionsButton);
-        links.addComponents(drivingDirections);
-        hide(drivingDirections);
+//        mapWidth = Display.getInstance().getDisplayWidth() - 2;
+//        mapHeight = Display.getInstance().getDisplayHeight() - 8 - FontUtil.getMediumNormalFont().getHeight();
+        drivingDirectionsDialog = new ExtendedDialog();
+        drivingDirectionsDialog.setLayout(new BoxLayout((BoxLayout.Y_AXIS)));
+        drivingDirectionsDialog.setScrollable(true);
+//        drivingDirectionsDialog.setScrollable(false);
+//        drivingDirectionsArea = new TextArea();
+//        drivingDirectionsArea.setRows(5);
+//        drivingDirectionsArea.setGrowByContent(true);
+//        drivingDirectionsArea.setColumns(mapWidth);
+//        drivingDirectionsArea.getStyle().setMargin(0, 0, 0, 0);
+//        drivingDirectionsArea.getStyle().setPadding(0, 0, 0, 0);
+//        drivingDirectionsArea.getSelectedStyle().setMargin(0, 0, 0, 0);
+//        drivingDirectionsArea.getSelectedStyle().setPadding(0, 0, 0, 0);
+//        drivingDirectionsArea.setPreferredW(mapWidth);
+//        drivingDirectionsArea.setPreferredH(mapHeight);
+//        drivingDirectionsArea.setWidth(mapWidth);
+//        drivingDirectionsArea.setHeight(mapHeight);
+//        drivingDirectionsDialog.addComponent(drivingDirectionsArea);
+//        drivingDirectionsDialog.getStyle().setMargin(0, 0, 0, 0);
+//        drivingDirectionsDialog.getStyle().setPadding(0, 0, 0, 0);
+//        drivingDirectionsDialog.getSelectedStyle().setMargin(0, 0, 0, 0);
+//        drivingDirectionsDialog.getSelectedStyle().setPadding(0, 0, 0, 0);
+//        drivingDirectionsDialog.setPreferredW(mapWidth);
+//        drivingDirectionsDialog.setPreferredH(mapHeight);
+//        drivingDirectionsDialog.setWidth(mapWidth);
+//        drivingDirectionsDialog.setHeight(mapHeight);
+//        final Container contentPane = drivingDirectionsDialog.getContentPane();
+//        contentPane.getStyle().setMargin(0, 0, 0, 0);
+//        contentPane.getStyle().setPadding(0, 0, 0, 0);
+//        contentPane.getSelectedStyle().setMargin(0, 0, 0, 0);
+//        contentPane.getSelectedStyle().setPadding(0, 0, 0, 0);
+//        contentPane.setPreferredW(mapWidth);
+//        contentPane.setPreferredH(mapHeight);
+//        contentPane.setWidth(mapWidth);
+//        contentPane.setHeight(mapHeight);
     }
 
     protected void addMapSection() {
-        Container mapContainer = new Container(new BoxLayout(BoxLayout.Y_AXIS));
+        mapWidth = Display.getInstance().getDisplayWidth() - 2;
+        mapHeight = Display.getInstance().getDisplayHeight() - 8 - FontUtil.getMediumNormalFont().getHeight();
+        mapImageDialog = new ExtendedDialog();
+        mapImageDialog.setScrollable(false);
         mapImage = new Label();
-        mapContainer.addComponent(mapImage);
-        mapContainer.setScrollable(true);
-        mapContainer.setScrollableX(true);
-        mapContainer.setScrollableY(true);
-        mapImageDialog = new Dialog();
-        mapImageDialog.addComponent(mapContainer);
-        mapImageDialog.addCommand(new Command("Ok"));
-        mapImageDialog.setAutoDispose(true);
-        mapImageDialog.setScrollable(true);
-        mapImageDialog.setScrollableX(true);
-        mapImageDialog.setScrollableY(true);
+//        mapImage.setX(0);
+//        mapImage.setY(0);
+        mapImage.getStyle().setMargin(0, 0, 0, 0);
+        mapImage.getStyle().setPadding(0, 0, 0, 0);
+        mapImage.getSelectedStyle().setMargin(0, 0, 0, 0);
+        mapImage.getSelectedStyle().setPadding(0, 0, 0, 0);
+        mapImage.setPreferredW(mapWidth);
+        mapImage.setPreferredH(mapHeight);
+        mapImage.setWidth(mapWidth);
+        mapImage.setHeight(mapHeight);
+        mapImageDialog.addComponent(mapImage);
+        mapImageDialog.getStyle().setMargin(0, 0, 0, 0);
+        mapImageDialog.getStyle().setPadding(0, 0, 0, 0);
+        mapImageDialog.getSelectedStyle().setMargin(0, 0, 0, 0);
+        mapImageDialog.getSelectedStyle().setPadding(0, 0, 0, 0);
+        mapImageDialog.setPreferredW(mapWidth);
+        mapImageDialog.setPreferredH(mapHeight);
+        mapImageDialog.setWidth(mapWidth);
+        mapImageDialog.setHeight(mapHeight);
+        final Container contentPane = mapImageDialog.getContentPane();
+        contentPane.getStyle().setMargin(0, 0, 0, 0);
+        contentPane.getStyle().setPadding(0, 0, 0, 0);
+        contentPane.getSelectedStyle().setMargin(0, 0, 0, 0);
+        contentPane.getSelectedStyle().setPadding(0, 0, 0, 0);
+        contentPane.setPreferredW(mapWidth);
+        contentPane.setPreferredH(mapHeight);
+        contentPane.setWidth(mapWidth);
+        contentPane.setHeight(mapHeight);
     }
 
     protected void hide(Component cmp) {
@@ -303,4 +451,84 @@ abstract class DetailsForm implements ActionListener {
     }
 
     protected abstract String getAddress();
+
+    private void addDrivingDirectionsTitle(String titleMessage) {
+        final Label title = new Label(titleMessage);
+        title.getStyle().setFont(FontUtil.getMediumBoldFont());
+        title.getSelectedStyle().setFont(FontUtil.getMediumBoldFont());
+        drivingDirectionsDialog.addComponent(title);
+        final Label dummy = new Label(" ");
+        dummy.getStyle().setFont(FontUtil.getSmallNormalFont());
+        drivingDirectionsDialog.addComponent(dummy);
+    }
+
+    private void addDrivingDirectionsSummary(DrivingDirectionsSummary summary) {
+        drivingDirectionsDialog.addComponent(summary);
+    }
+
+    private void addDrivingDirectionsMarker(String markerData, String markerLabel) {
+        Container c = new Container(new BoxLayout((BoxLayout.X_AXIS)));
+        c.addComponent(UiUtil.getImageLabel("/img/marker" + markerLabel + ".jpg"));
+        final Label dataLabel = new Label(markerData);
+        dataLabel.getStyle().setMargin(1, 0, 1, 0);
+        dataLabel.getSelectedStyle().setMargin(1, 0, 1, 0);
+        dataLabel.getStyle().setFont(FontUtil.getMediumBoldFont());
+        dataLabel.getSelectedStyle().setFont(FontUtil.getMediumBoldFont());
+        c.addComponent(dataLabel);
+        drivingDirectionsDialog.addComponent(c);
+        drivingDirectionsDialog.addComponent(getHorizontalLine());
+    }
+
+    private Label getHorizontalLine() {
+        Label line = new Label(" ");
+        line.setWidth(Display.getInstance().getDisplayWidth());
+        Font smallFont = Font.createSystemFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL);
+        line.getStyle().setFont(smallFont);
+        line.getStyle().setBgPainter(new Painter() {
+
+            public void paint(Graphics g, Rectangle r) {
+                g.setColor(0x000000);
+                g.fillRect(r.getX(), r.getY() + 10, r.getSize().getWidth(), 1);
+            }
+        });
+        line.getStyle().setMargin(1, 0, 1, 0);
+        line.getSelectedStyle().setMargin(1, 0, 1, 0);
+        return line;
+    }
+
+    private void addDrivingDirectionsRoute(int step, String instructions, String distance, String duration) {
+        Container routeContainer = new Container(new BoxLayout(BoxLayout.X_AXIS));
+        Label stepLabel = new Label(String.valueOf(step));
+        stepLabel.getStyle().setMargin(1, 0, 1, 0);
+        stepLabel.getSelectedStyle().setMargin(1, 0, 1, 0);
+        stepLabel.getStyle().setFont(FontUtil.getMediumBoldFont());
+        stepLabel.getSelectedStyle().setFont(FontUtil.getMediumBoldFont());
+        stepLabel.setPreferredW(FontUtil.getMediumBoldFont().stringWidth("999"));
+        routeContainer.addComponent(stepLabel);
+        Container detailsContainer = new Container(new BoxLayout(BoxLayout.Y_AXIS));
+        Label instructionsLabel = new Label(instructions);
+        instructionsLabel.getStyle().setMargin(1, 0, 1, 0);
+        instructionsLabel.getSelectedStyle().setMargin(1, 0, 1, 0);
+        instructionsLabel.getStyle().setFont(FontUtil.getMediumBoldFont());
+        instructionsLabel.getSelectedStyle().setFont(FontUtil.getMediumBoldFont());
+        detailsContainer.addComponent(instructionsLabel);
+        Container distanceDurationContainer = new Container(new BoxLayout((BoxLayout.X_AXIS)));
+        Label distanceLabel = new Label(distance);
+        distanceLabel.getStyle().setMargin(1, 0, 1, 0);
+        distanceLabel.getSelectedStyle().setMargin(1, 0, 1, 0);
+        distanceLabel.getStyle().setFont(FontUtil.getMediumNormalFont());
+        distanceLabel.getSelectedStyle().setFont(FontUtil.getMediumNormalFont());
+        distanceLabel.setPreferredW(FontUtil.getMediumNormalFont().stringWidth("0.35 KMSSSS"));
+        distanceDurationContainer.addComponent(distanceLabel);
+        Label durationLabel = new Label(duration);
+        durationLabel.getStyle().setMargin(1, 0, 1, 0);
+        durationLabel.getSelectedStyle().setMargin(1, 0, 1, 0);
+        durationLabel.getStyle().setFont(FontUtil.getMediumNormalFont());
+        durationLabel.getSelectedStyle().setFont(FontUtil.getMediumNormalFont());
+        distanceDurationContainer.addComponent(durationLabel);
+        detailsContainer.addComponent(distanceDurationContainer);
+        routeContainer.addComponent(detailsContainer);
+        drivingDirectionsDialog.addComponent(routeContainer);
+        drivingDirectionsDialog.addComponent(getHorizontalLine());
+    }
 }

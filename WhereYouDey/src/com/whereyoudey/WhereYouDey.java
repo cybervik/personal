@@ -2,6 +2,7 @@ package com.whereyoudey;
 
 import com.sun.lwuit.Dialog;
 import java.io.IOException;
+import javax.microedition.io.ConnectionNotFoundException;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.midlet.MIDletStateChangeException;
 
@@ -11,12 +12,19 @@ import com.sun.lwuit.Image;
 import com.sun.lwuit.Label;
 import com.sun.lwuit.layouts.BorderLayout;
 import com.whereyoudey.form.BusinessSearchForm;
+import com.whereyoudey.service.SearchService;
+import com.whereyoudey.service.helper.Result;
+import com.whereyoudey.utils.DialogUtil;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Random;
 
 public class WhereYouDey extends MIDlet {
 
     public static final int FLASH_LOGO_DURATION = 5 * 1000;
     BusinessSearchForm searchForm;
     private Form flashForm;
+    private Result[] banners;
+    private int bannerPos = 0;
 
     public BusinessSearchForm getSearchForm() {
         return searchForm;
@@ -37,6 +45,11 @@ public class WhereYouDey extends MIDlet {
 
     protected void startApp() throws MIDletStateChangeException {
         init();
+        showFlashLogo();
+        searchForm = new BusinessSearchForm(this);
+    }
+
+    private void showFlashLogo() {
         Image flashLogo;
         try {
             flashLogo = Image.createImage("/img/Intropage.jpg");
@@ -53,11 +66,15 @@ public class WhereYouDey extends MIDlet {
         } catch (IOException ex) {
             ex.printStackTrace();
         }
-        searchForm = new BusinessSearchForm(this);
     }
 
     private void init() {
         Display.init(this);
+        final Display display = Display.getInstance();
+        int x = display.getDisplayWidth();
+        int y = display.getDisplayHeight();
+        System.out.println("Display size - " + x + " x " + y);
+        display.setThirdSoftButton(true);
     }
 
     public void exit() {
@@ -73,6 +90,33 @@ public class WhereYouDey extends MIDlet {
     }
 
     private boolean userConfirmsExit() {
-        return Dialog.show("Confirm Exit", "Do you really want to exit?", "Ok", "Cancel");
+        return DialogUtil.showConfirm("Confirm Exit", "Do you really want to exit?");
+    }
+
+    public void requestPlatformService(String url) {
+        try {
+            platformRequest(url);
+        } catch (Exception e) {
+        }
+    }
+
+    public void setBanners(Result[] banners) {
+        this.banners = banners;
+    }
+
+    public Result getRandomBanner() {
+        if (banners != null && banners.length > 0) {
+            final Result banner = banners[bannerPos];
+            bannerPos++;
+            if (bannerPos == SearchService.MAX_RESULTS) {
+                bannerPos = 0;
+            }
+            return banner;
+        }
+        return null;
+    }
+
+    public boolean hasBanners() {
+        return (banners != null && banners.length > 0);
     }
 }

@@ -6,6 +6,7 @@ package com.whereyoudey.form.component;
 
 import com.sun.lwuit.Component;
 import com.sun.lwuit.Container;
+import com.sun.lwuit.Display;
 import com.sun.lwuit.Font;
 import com.sun.lwuit.Graphics;
 import com.sun.lwuit.Label;
@@ -26,13 +27,15 @@ public class Advertisement extends ResultItem {
 
     private Label advLabel;
 
-    public Advertisement() {
-        super(new Result());
+    public Advertisement(Result randomBanner) {
+        super(randomBanner);
         addAdvLabel();
     }
 
     private void addAdvLabel() {
-        advLabel = new Label("Advertisement");
+        final String imageUrl = "http://www.whereyoudey.com/mainpagebanners/" + getResultRecord().getProperty("Banner");
+        System.out.println("Banner image url" + imageUrl);
+        advLabel = UiUtil.getImageLabelFromUrl(imageUrl, Display.getInstance().getDisplayWidth()-10);
         setDefaultStyle(advLabel);
         addComponent(advLabel);
     }

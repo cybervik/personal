@@ -14,6 +14,7 @@ import com.sun.lwuit.geom.Rectangle;
 import com.sun.lwuit.layouts.BoxLayout;
 import com.sun.lwuit.layouts.FlowLayout;
 import com.sun.lwuit.layouts.Layout;
+import com.whereyoudey.WhereYouDey;
 import com.whereyoudey.form.ResultItem;
 import com.whereyoudey.service.helper.Result;
 
@@ -31,10 +32,12 @@ public class SearchResultsContainer extends Container {
     public static final int COLOR_BLACK = 0x000000;
     public static final int COLOR_WHITE = 0xffffff;
     public static final int COLOR_SELECTEDITEM_BACKGROUND = 0x9999ff;
+    private final WhereYouDey midlet;
 
-    public SearchResultsContainer() {
+    public SearchResultsContainer(WhereYouDey midlet) {
         super(new BoxLayout(BoxLayout.Y_AXIS));
-        setScrollableY(true);
+        setScrollable(true);
+        this.midlet = midlet;
     }
 
     public void scrollComponentToVisible(Component c) {
@@ -55,7 +58,7 @@ public class SearchResultsContainer extends Container {
     }
 
     private void addAdvertisment() {
-        Advertisement adv = new Advertisement();
+        Advertisement adv = new Advertisement(midlet.getRandomBanner());
         super.addComponent(adv);
     }
 
@@ -153,7 +156,11 @@ public class SearchResultsContainer extends Container {
     }
 
     public Result getSelectedItemResultRecord() {
-        ResultItem selectedItem = (ResultItem) getComponentAt(selectItemPos);
-        return selectedItem.getResultRecord();
+        Result resultRecord = null;
+        if (selectItemPos >= 0 && getCount() > 0) {
+            ResultItem selectedItem = (ResultItem) getComponentAt(selectItemPos);
+            resultRecord = selectedItem.getResultRecord();
+        }
+        return resultRecord;
     }
 }

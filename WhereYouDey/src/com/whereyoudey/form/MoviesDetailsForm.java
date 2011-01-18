@@ -38,26 +38,22 @@ public class MoviesDetailsForm extends DetailsForm {
         final String street = result.getProperty("Street");
         final String area = result.getProperty("Area");
         final String city = result.getProperty("City");
-        showTimesLinkUrl = result.getProperty("RSSURL");
+//        showTimesLinkUrl = result.getProperty("RSSURL");
         address1.setText(UiUtil.getCommaSepFormat(street, area));
         address2.setText(city);
     }
 
     protected void selectActionPerformed(String focussedName) {
         if (LINK_SHOW_TIMES.equals(focussedName)) {
-            try {
-                midlet.platformRequest(showTimesLinkUrl);
-            } catch (ConnectionNotFoundException ex) {
-                ex.printStackTrace();
-            }
+            midlet.requestPlatformService(showTimesLinkUrl);
         }
     }
 
     protected void addBasicInfo() {
         address1 = addSmallFontLabel("");
         address2 = addSmallFontLabel("");
-        showTimesLink = UiUtil.getLink(LINK_SHOW_TIMES);
-        form.addComponent(showTimesLink);
+//        showTimesLink = UiUtil.getLink(LINK_SHOW_TIMES);
+//        form.addComponent(showTimesLink);
     }
 
     protected void addFormSpecificSections() {

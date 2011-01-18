@@ -26,16 +26,15 @@ public class ListForm implements ActionListener {
 
     public static final String OPTION_CANCEL = "Cancel";
     public static final String OPTION_SELECT = "Select";
-    private Form listForm;
+    private ExtendedForm form;
     private final WhereYouDey midlet;
     private final List citiesList;
     private TextField associatedField;
     private SearchForm callingForm;
 
     public ListForm(WhereYouDey midlet, String[] data, TextField associatedField, SearchForm callingForm) {
-        listForm = new Form();
-        listForm.getStyle().setBgColor(Colors.FORM_BACKGROUND);
-        listForm.setLayout(new BoxLayout(BoxLayout.Y_AXIS));
+        form = new ExtendedForm();
+        form.setLayout(new BoxLayout(BoxLayout.Y_AXIS));
         citiesList = new List(data);
         final DefaultListCellRenderer renderer = (DefaultListCellRenderer) citiesList.getRenderer();
         renderer.setShowNumbers(false);
@@ -45,11 +44,11 @@ public class ListForm implements ActionListener {
         Font smallBoldFont = UiUtil.getFont(Font.STYLE_BOLD, Font.SIZE_SMALL);
         renderer.getStyle().setFont(smallFont);
         renderer.getSelectedStyle().setFont(smallBoldFont);
-        listForm.addComponent(citiesList);
-        listForm.addCommand(new Command(OPTION_SELECT));
-        listForm.addCommand(new Command(OPTION_CANCEL));
-        listForm.addCommandListener(this);
-        listForm.show();
+        form.addComponent(citiesList);
+        form.addCommand(new Command(OPTION_SELECT));
+        form.addCommand(new Command(OPTION_CANCEL));
+        form.addCommandListener(this);
+        form.show();
         this.midlet = midlet;
         this.associatedField = associatedField;
         this.callingForm = callingForm;
@@ -247,8 +246,8 @@ public class ListForm implements ActionListener {
     public void show(TextField associatedField, SearchForm callingForm) {
         this.associatedField = associatedField;
         this.callingForm = callingForm;
-        this.listForm.scrollComponentToVisible(this.citiesList);
+        this.form.scrollComponentToVisible(this.citiesList);
         this.citiesList.setSelectedIndex(0);
-        this.listForm.show();
+        this.form.show();
     }
 }

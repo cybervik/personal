@@ -32,7 +32,10 @@ import com.whereyoudey.form.ListForm;
 import com.whereyoudey.form.ResultForm;
 import com.whereyoudey.form.BusinessSearchForm;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Vector;
+import javax.microedition.io.Connector;
+import javax.microedition.io.HttpConnection;
 
 /**
  *
@@ -40,14 +43,10 @@ import java.util.Vector;
  */
 public class UiUtil {
 
-    private UiUtil() {
-    }
-
-    public static Image getImage(String imagePath, int imageWidth) {
+    public static Image getImage(String imagePath) {
         Image img = null;
         try {
             img = Image.createImage(imagePath);
-            img = img.scaledWidth(imageWidth);
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -55,8 +54,40 @@ public class UiUtil {
         return img;
     }
 
-    public static void showDialog(String message) {
-        Dialog.show(null, message, null, "Ok");
+    public static Image getImageFromUrl(String url) {
+        Image img = null;
+        try {
+            HttpConnection conn = (HttpConnection) Connector.open(url);
+            conn.setRequestMethod(HttpConnection.GET);
+            InputStream input = conn.openInputStream();
+            img = Image.createImage(input);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return img;
+    }
+
+    private static Label getLabel(Image img) {
+        Label imageLabel = new Label(img);
+        imageLabel.setAlignment(Component.CENTER);
+        return imageLabel;
+    }
+
+    public static Label getImageLabelFromUrl(String imageUrl, int width) {
+        Image img = getImageFromUrl(imageUrl);
+        img = img.scaledWidth(width);
+        return getLabel(img);
+    }
+
+    private UiUtil() {
+    }
+
+    public static Image getImage(String imagePath, int imageWidth) {
+        Image img = getImage(imagePath);
+        if (img != null) {
+            img = img.scaledWidth(imageWidth);
+        }
+        return img;
     }
 
     public static TextField addTextFieldWithLabel(final Container container, String labelText) {
@@ -117,12 +148,18 @@ public class UiUtil {
     }
 
     public static Label getImageLabel(String imagePath, int imageWidth) {
-        Label imageLabel = null;
-        Image img = null;
-        img = getImage(imagePath, imageWidth);
-        imageLabel = new Label(img);
-        imageLabel.setAlignment(Component.CENTER);
-        return imageLabel;
+        Image img = getImage(imagePath, imageWidth);
+        return getLabel(img);
+    }
+
+    public static Label getImageLabel(String imagePath) {
+        Image img = getImage(imagePath);
+        return getLabel(img);
+    }
+
+    public static Label getImageLabelFromUrl(String url) {
+        Image img = getImageFromUrl(url);
+        return getLabel(img);
     }
 
     public static boolean isEmpty(String str) {
@@ -140,14 +177,6 @@ public class UiUtil {
 
     public static Font getFont(int style, int size) {
         return Font.createSystemFont(Font.FACE_SYSTEM, style, size);
-    }
-
-    public static void showAbout() {
-        showDialog("WhereYouDey Mobile (Version 1.0)\n" + "WhereYouDey (c) 2010 Naija Pages Ltd, Inc. " + "All rights reserved. For help contact: " + "support@whereyoudey.com");
-    }
-
-    public static void showHelp() {
-        showDialog("Please contact: support@whereyoudey.com");
     }
 
     public static String getCommaSepFormat(final String val1, final String val2) {

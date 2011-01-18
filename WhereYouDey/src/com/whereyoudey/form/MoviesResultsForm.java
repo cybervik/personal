@@ -8,8 +8,10 @@ import com.sun.lwuit.Command;
 import com.sun.lwuit.Container;
 import com.whereyoudey.WhereYouDey;
 import com.whereyoudey.service.helper.Result;
+import com.whereyoudey.utils.DialogUtil;
 import com.whereyoudey.utils.SortUtil;
 import com.whereyoudey.utils.UiUtil;
+import javax.microedition.io.ConnectionNotFoundException;
 
 /**
  *
@@ -22,7 +24,7 @@ class MoviesResultsForm extends ResultForm {
     }
 
     protected DetailsForm getDetailsForm() {
-        return new MoviesDetailsForm(midlet, this);
+        return null;
     }
 
     protected void addFormSpecificCommands() {
@@ -56,5 +58,22 @@ class MoviesResultsForm extends ResultForm {
 
     protected String getTitleProperty() {
         return "CompanyName";
+    }
+
+    protected String getTitle() {
+        final MoviesSearchForm form = (MoviesSearchForm) callingForm;
+        return "Movies near " + form.city.getText();
+    }
+
+    protected void handleSelect() {
+        String url = resultsList.getSelectedItemResultRecord().getProperty("RSSURL");
+        if (!UiUtil.isEmpty(url)) {
+            if (!url.trim().startsWith("http://")) {
+                url = "http://" + url.trim();
+            }
+            midlet.requestPlatformService(url);
+        } else {
+            DialogUtil.showInfo("Error", "Movie listing does not have an url.");
+        }
     }
 }

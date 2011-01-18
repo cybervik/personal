@@ -23,9 +23,12 @@ import com.whereyoudey.WhereYouDey;
 import com.whereyoudey.service.helper.Result;
 import com.whereyoudey.service.SearchService;
 import com.whereyoudey.utils.Colors;
+import com.whereyoudey.utils.DialogUtil;
 import com.whereyoudey.utils.UiUtil;
 import com.whereyoudey.webservice.Search;
+import java.rmi.RemoteException;
 import javax.microedition.io.ConnectionNotFoundException;
+import searchhelper.SearchHelper_Stub;
 
 /**
  *
@@ -72,7 +75,7 @@ public abstract class SearchForm implements ActionListener, Runnable {
     };
     protected static final SearchService searchService = new SearchService();
     protected String focussed;
-    protected Form form;
+    protected ExtendedForm form;
     protected WhereYouDey midlet;
     protected Container topContainer;
     protected Dialog waitDialog;
@@ -80,6 +83,8 @@ public abstract class SearchForm implements ActionListener, Runnable {
     private ResultForm resultForm;
     private ListForm cityOptionsform;
     private SearchForm eventsForm;
+    final Command selectCommand = new Command(OPTION_SELECT);
+    private Label selectedIconImage;
 
     public SearchForm(WhereYouDey midlet) {
         this.midlet = midlet;
@@ -93,25 +98,29 @@ public abstract class SearchForm implements ActionListener, Runnable {
         } else if (OPTION_FIND.equals(commandName)) {
             search();
         } else if (OPTION_ABOUT_US.equals(commandName)) {
-            UiUtil.showAbout();
+            FormDialogs.showAbout();
         } else if (OPTION_HELP.equals(commandName)) {
-            UiUtil.showHelp();
+            FormDialogs.showHelp();
         } else if (OPTION_CHECK_FOR_UPDATES.equals(commandName)) {
-            requestPlatFormService(UPDATE_URL);
+            midlet.requestPlatformService(UPDATE_URL);
         } else if (OPTION_SELECT.equals(commandName)) {
+            if (selectedIconImage != null) {
+                selectedIconImage.setFocus(false);
+                selectedIconImage = null;
+            }
             System.out.println("Focussed = " + focussed);
             if (ICON_NAME_VIDEOS.equals(focussed)) {
-                requestPlatFormService(VIDEO_URL);
+                midlet.requestPlatformService(VIDEO_URL);
             } else if (LINK_MORE.equals(focussed)) {
-                UiUtil.showDialog("Comming soon...");
+                handleUnaviableFeature();
             } else if (ICON_NAME_FLIGHTS.equals(focussed)) {
-                UiUtil.showDialog("Comming soon...");
+                handleUnaviableFeature();
             } else if (ICON_NAME_OFFERS.equals(focussed)) {
-                UiUtil.showDialog("Comming soon...");
+                handleUnaviableFeature();
             } else if (ICON_NAME_MOVIES.equals(focussed)) {
                 showMoviesForm();
             } else if (ICON_NAME_SMS_ADS.equals(focussed)) {
-                UiUtil.showDialog("Comming soon...");
+                handleUnaviableFeature();
             } else if (ICON_NAME_EVENTS.equals(focussed)) {
                 showEventsForm();
             } else if (LINK_SELECT_CITY.equals(focussed)) {
@@ -121,6 +130,12 @@ public abstract class SearchForm implements ActionListener, Runnable {
             }
         } else {
             moreActionPerformed(commandName);
+        }
+    }
+
+    private void handleUnaviableFeature() {
+        if (FormDialogs.showFeatureUnavialbleMessage()) {
+            midlet.requestPlatformService("http://www.whereyoudey.com");
         }
     }
 
@@ -135,22 +150,27 @@ public abstract class SearchForm implements ActionListener, Runnable {
         int noOfIconsFittingInScreenWidth = (DISPLAY_WIDTH - MORE_LINK_POSSIBLE_WIDTH) / ICON_WIDTH;
         for (int i = 0; i < noOfIconsFittingInScreenWidth && i < iconPaths.length; i++) {
             final int pos = i;
-            Label image = UiUtil.getImageLabel(iconPaths[i], ICON_WIDTH);
+            final Label image = UiUtil.getImageLabel(iconPaths[i], ICON_WIDTH);
             image.setFocusable(true);
             image.addFocusListener(new FocusListener() {
 
                 public void focusGained(Component cmpnt) {
                     focussed = iconIds[pos];
+                    selectedIconImage = image;
+                    form.addCommand(selectCommand, form.getCommandCount());
                 }
 
                 public void focusLost(Component cmpnt) {
                     if (focussed.equals(iconIds[pos])) {
                         focussed = "";
+                        selectedIconImage = null;
+                        form.removeCommand(selectCommand);
                     }
                 }
             });
             if (i == getSelectedIconPos()) {
                 image.getStyle().setBorder(Border.createBevelRaised());
+                selectedIconImage = image;
             }
             image.getSelectedStyle().setBorder(Border.createLineBorder(1));
             image.getStyle().setPadding(0, 0, 4, 4);
@@ -161,11 +181,13 @@ public abstract class SearchForm implements ActionListener, Runnable {
 
             public void focusGained(Component cmpnt) {
                 focussed = LINK_MORE;
+                form.addCommand(selectCommand, form.getCommandCount());
             }
 
             public void focusLost(Component cmpnt) {
                 if (LINK_MORE.equals(focussed)) {
                     focussed = "";
+                    form.removeCommand(selectCommand);
                 }
             }
         });
@@ -175,7 +197,8 @@ public abstract class SearchForm implements ActionListener, Runnable {
 
     private void addLogo() {
         int logoWidth = DISPLAY_WIDTH * 2 / 3;
-        Label logo = UiUtil.getImageLabel(LOGO_PATH, logoWidth);
+        System.out.println("Logo Width - " + logoWidth);
+        Label logo = UiUtil.getImageLabel(LOGO_PATH);
         topContainer.addComponent(logo);
     }
 
@@ -192,19 +215,17 @@ public abstract class SearchForm implements ActionListener, Runnable {
 
     private void addMenuActions() {
         form.addCommandListener(this);
-        form.addCommand(new Command(OPTION_EXIT));
-        form.addCommand(new Command(OPTION_ABOUT_US));
-        form.addCommand(new Command(OPTION_CHECK_FOR_UPDATES));
-        form.addCommand(new Command(OPTION_HELP));
+        form.addMenuItem(OPTION_FIND);
+        form.addMenuItem(OPTION_EXIT);
+        form.addMenuItem(OPTION_ABOUT_US);
+        form.addMenuItem(OPTION_CHECK_FOR_UPDATES);
+        form.addMenuItem(OPTION_HELP);
         addFormSpecificCommands();
-        form.addCommand(new Command(OPTION_SELECT));
-        form.addCommand(new Command(OPTION_FIND));
     }
 
     private void createForm() {
-        form = new Form("");
+        form = new ExtendedForm();
         form.setLayout(new BorderLayout());
-        form.getStyle().setBgColor(Colors.FORM_BACKGROUND);
     }
 
     public Component getFocussed() {
@@ -222,14 +243,6 @@ public abstract class SearchForm implements ActionListener, Runnable {
         addMainElements();
         addMenuActions();
         show();
-    }
-
-    private void requestPlatFormService(String uri) {
-        try {
-            midlet.platformRequest(uri);
-        } catch (ConnectionNotFoundException ex) {
-            ex.printStackTrace();
-        }
     }
 
     public void show() {
@@ -260,10 +273,16 @@ public abstract class SearchForm implements ActionListener, Runnable {
         } catch (InterruptedException ex) {
             ex.printStackTrace();
         }
-        searchAction();
-        initResultForm(results);
+        try {
+            loadBanners();
+            searchAction();
+            initResultForm(results);
+            hideWait();
+            resultForm.show();
+        } catch (Exception e) {
+            DialogUtil.showInfo("Error", "Could not connect to server.");
+        }
         hideWait();
-        resultForm.show();
     }
 
     private void initResultForm(Result[] results) throws NumberFormatException {
@@ -280,7 +299,7 @@ public abstract class SearchForm implements ActionListener, Runnable {
 
     public void search() {
         if (!isFormValid()) {
-            UiUtil.showDialog(getFormInvalidMessage());
+            DialogUtil.showInfo("Error", getFormInvalidMessage());
             return;
         }
         Thread t = new Thread(this);
@@ -317,11 +336,13 @@ public abstract class SearchForm implements ActionListener, Runnable {
 
             public void focusGained(Component cmpnt) {
                 focussed = SearchForm.LINK_SELECT_CITY;
+                form.addCommand(selectCommand, form.getCommandCount());
             }
 
             public void focusLost(Component cmpnt) {
                 if (SearchForm.LINK_SELECT_CITY.equals(focussed)) {
                     focussed = "";
+                    form.removeCommand(selectCommand);
                 }
             }
         });
@@ -334,5 +355,16 @@ public abstract class SearchForm implements ActionListener, Runnable {
 
     private void showMoviesForm() {
         SearchForm moviesSearchForm = new MoviesSearchForm(midlet);
+    }
+
+    void resetAndShow() {
+        show();
+        setFocus();
+    }
+
+    private void loadBanners() {
+        if (!midlet.hasBanners()) {
+            midlet.setBanners(searchService.getBanners());
+        }
     }
 }

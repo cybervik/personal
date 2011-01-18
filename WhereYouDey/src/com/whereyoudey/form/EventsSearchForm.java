@@ -18,7 +18,7 @@ class EventsSearchForm extends SearchForm {
 
     public static final String FORM_TITLE = "Search Events";
     protected TextField city;
-    private String OPTION_HOME = "Home";
+    private static final String OPTION_HOME = "Home";
 
     EventsSearchForm(WhereYouDey midlet) {
         super(midlet);
@@ -28,7 +28,7 @@ class EventsSearchForm extends SearchForm {
         UiUtil.addBoldMediumFontLabel(topContainer, getFormTitle());
         city = UiUtil.addTextFieldWithLabel(topContainer, "City");
         addSelectCityLink();
-//        city.setText("Port Harcourt");
+        city.setText("Calabar");
     }
 
     protected String getFormTitle() {
@@ -67,12 +67,12 @@ class EventsSearchForm extends SearchForm {
     }
 
     protected void addFormSpecificCommands() {
-        form.addCommand(new Command(OPTION_HOME));
+        form.addMenuItem(OPTION_HOME);
     }
 
     protected void moreActionPerformed(String commandName) {
         if (OPTION_HOME.equals(commandName)) {
-            midlet.getSearchForm().show();
+            midlet.getSearchForm().resetAndShow();
         }
     }
 }

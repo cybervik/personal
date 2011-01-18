@@ -20,6 +20,7 @@ import com.whereyoudey.form.component.SearchResultsContainer;
 import com.whereyoudey.service.SearchService;
 import com.whereyoudey.service.helper.Result;
 import com.whereyoudey.utils.Colors;
+import com.whereyoudey.utils.DialogUtil;
 import com.whereyoudey.utils.UiUtil;
 import javax.microedition.io.ConnectionNotFoundException;
 
@@ -42,37 +43,39 @@ public abstract class ResultForm implements ActionListener, Runnable {
     protected static final String OPTION_SORT_BY_CITY = "Sort by city";
     protected static final String OPTION_SORT_BY_RELEVANCE = "Sort by relevance";
     protected WhereYouDey midlet;
-    protected Form form;
+    protected ExtendedForm form;
     protected Result[] results;
-    private final SearchForm callingForm;
+    protected final SearchForm callingForm;
     private Header header;
     private int MAX_RESULTS = 10;
-    private SearchResultsContainer resultsList;
+    protected SearchResultsContainer resultsList;
     private DetailsForm detailsForm;
     private Dialog waitDialog;
+    final Command selectCmd = new Command(OPTION_SELECT);
+    final Command callCmd = new Command(OPTION_CALL);
 
     ResultForm(WhereYouDey midlet, Result[] results, SearchForm callingForm) {
+        this.callingForm = callingForm;
         initVariables(midlet);
         initForm();
         addHeader();
         addResultsSection(results);
         addCommands();
-        this.callingForm = callingForm;
         form.show();
     }
 
     protected abstract DetailsForm getDetailsForm();
 
     private void addCommands() {
-        form.addCommand(new Command(OPTION_EXIT));
+        form.addCommand(selectCmd);
         form.addCommand(new Command(OPTION_BACK));
-        form.addCommand(new Command(OPTION_HOME));
+        form.addCommand(new Command(OPTION_EXIT));
         form.addCommand(new Command(OPTION_HELP));
+        form.addCommand(new Command(OPTION_HOME));
         form.addCommand(new Command(OPTION_PREV));
         form.addCommand(new Command(OPTION_NEXT));
         addFormSpecificCommands();
-        form.addCommand(new Command(OPTION_CALL));
-        form.addCommand(new Command(OPTION_SELECT));
+        form.addCommand(callCmd);
         form.addCommandListener(this);
     }
 
@@ -82,19 +85,22 @@ public abstract class ResultForm implements ActionListener, Runnable {
 
     private void call() {
         String phoneNumber = getSelectedItemPhoneNumber();
-        try {
-            if (phoneNumber.trim().equals("")) {
-                UiUtil.showDialog("Phone number not found in this result.");
-            } else {
-                midlet.platformRequest("tel:" + phoneNumber);
-            }
-        } catch (ConnectionNotFoundException ex) {
-            ex.printStackTrace();
+        if (phoneNumber == null) {
+            DialogUtil.showInfo("Error", "There are no results.");
+            return;
         }
+        if (UiUtil.isEmpty(phoneNumber)) {
+            DialogUtil.showInfo("Error", "Phone number not found in this result.");
+            return;
+        }
+        midlet.requestPlatformService("tel:" + phoneNumber);
     }
 
     private String getSelectedItemPhoneNumber() {
         Result selectedItem = resultsList.getSelectedItemResultRecord();
+        if (selectedItem == null) {
+            return null;
+        }
         return selectedItem.getProperty(getPhoneNumberProperty());
     }
 
@@ -108,20 +114,33 @@ public abstract class ResultForm implements ActionListener, Runnable {
                 resultsList.selectItemDown();
                 break;
         }
-        updateTitle();
+//        updateTitle();
+    }
+
+    protected void handleSelect() {
+        showDetailsForm();
     }
 
     private void showDetailsForm() {
+        final Result selectedItemResultRecord = resultsList.getSelectedItemResultRecord();
+        if (selectedItemResultRecord == null) {
+            DialogUtil.showInfo("Error", "There are no results.");
+            return;
+        }
         if (detailsForm == null) {
             detailsForm = getDetailsForm();
         }
-        detailsForm.init(resultsList.getSelectedItemResultRecord());
+        try {
+            detailsForm.init(selectedItemResultRecord);
+        } catch (ApplicationException ae) {
+            DialogUtil.showInfo("Error", ae.getMessage());
+        }
     }
 
     protected abstract String getInitialSortProperty();
 
     private void goBack() {
-        callingForm.show();
+        callingForm.resetAndShow();
     }
 
     protected void initProcessedResults(Result[] results) throws NumberFormatException {
@@ -145,7 +164,8 @@ public abstract class ResultForm implements ActionListener, Runnable {
     }
 
     private void updateTitle() {
-        header.setTitle(resultsList.getSelectedItemResultRecord().getProperty(getTitleProperty()));
+        header.setTitle(getTitle());
+//        header.setTitle(resultsList.getSelectedItemResultRecord().getProperty(getTitleProperty()));
     }
 
     protected abstract void renderResult(Result result, Container itemContainer) throws NumberFormatException;
@@ -155,12 +175,12 @@ public abstract class ResultForm implements ActionListener, Runnable {
     }
 
     private void initForm() {
-        form = new Form();
+        form = new ExtendedForm();
+        form.setScrollableX(true);
         form.setScrollableY(false);
         form.setLayout(new BorderLayout());
         form.addKeyListener(-1, this);
         form.addKeyListener(-2, this);
-        form.setScrollableX(true);
     }
 
     private void addHeader() {
@@ -168,7 +188,7 @@ public abstract class ResultForm implements ActionListener, Runnable {
     }
 
     private void addResultsSection(Result[] results) throws NumberFormatException {
-        resultsList = new SearchResultsContainer();
+        resultsList = new SearchResultsContainer(midlet);
         form.addComponent(BorderLayout.CENTER, resultsList);
         form.setFocused(resultsList);
         initResults(results);
@@ -213,11 +233,11 @@ public abstract class ResultForm implements ActionListener, Runnable {
         } else if (commandName.equals(OPTION_EXIT)) {
             midlet.exit();
         } else if (commandName.equals(OPTION_HELP)) {
-            UiUtil.showHelp();
+            FormDialogs.showHelp();
         } else if (commandName.equals(OPTION_HOME)) {
             goBack();
         } else if (commandName.equals(OPTION_SELECT)) {
-            showDetailsForm();
+            handleSelect();
         } else if (commandName.equals(OPTION_CALL)) {
             call();
         } else if (commandName.equals(OPTION_NEXT)) {
@@ -280,4 +300,6 @@ public abstract class ResultForm implements ActionListener, Runnable {
     protected abstract void handleFormSpecificCommandAction(String commandName);
 
     protected abstract String getTitleProperty();
+
+    protected abstract String getTitle();
 }

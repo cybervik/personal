@@ -40,12 +40,12 @@ public class EventsResultsForm extends ResultForm {
         final String category = result.getProperty("CategoryName");
         setPrimaryPhoneProperty(telephone1, telephone2);
         UiUtil.add(itemContainer, eventName, true);
-        UiUtil.add(itemContainer, date);
+//        UiUtil.add(itemContainer, date);
         UiUtil.add(itemContainer, venue);
-        UiUtil.add(itemContainer, UiUtil.getCommaSepFormat(street, area));
+//        UiUtil.add(itemContainer, UiUtil.getCommaSepFormat(street, area));
         UiUtil.add(itemContainer, UiUtil.getCommaSepFormat(city, state));
         UiUtil.add(itemContainer, category);
-        UiUtil.add(itemContainer, UiUtil.getCommaSepFormat(telephone1, telephone2));
+//        UiUtil.add(itemContainer, UiUtil.getCommaSepFormat(telephone1, telephone2));
     }
 
     private void setPrimaryPhoneProperty(final String telephone1, final String telephone2) {
@@ -73,5 +73,10 @@ public class EventsResultsForm extends ResultForm {
 
     protected String getTitleProperty() {
         return "EventName";
+    }
+
+    protected String getTitle() {
+        EventsSearchForm form = (EventsSearchForm) callingForm;
+        return "Events near "+form.city.getText();
     }
 }

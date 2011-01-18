@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:tns="http://www.WhereYouDey.com/WhereYouDeyWebServices/SearchHelper.asmx" xmlns:s="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" targetNamespace="http://www.WhereYouDey.com/WhereYouDeyWebServices/SearchHelper.asmx" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:types>
+    <s:schema elementFormDefault="qualified" targetNamespace="http://www.WhereYouDey.com/WhereYouDeyWebServices/SearchHelper.asmx">
+      <s:element name="GetLocationSuggestions">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="prefixText" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="count" type="s:int" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetLocationSuggestionsResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetLocationSuggestionsResult" type="tns:ArrayOfString" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="ArrayOfString">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="string" nillable="true" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="GetSearchSuggestions">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="prefixText" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="count" type="s:int" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetSearchSuggestionsResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetSearchSuggestionsResult" type="tns:ArrayOfString" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="createReview">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="name" type="s:string" />
+            <s:element minOccurs="0" maxOccurs="1" name="comment" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="locationID" type="s:long" />
+            <s:element minOccurs="1" maxOccurs="1" name="starCount" type="s:int" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="createReviewResponse">
+        <s:complexType />
+      </s:element>
+      <s:element name="getStarCount">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1" name="locationID" type="s:long" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="getStarCountResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1" name="getStarCountResult" type="s:long" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="getReviewCount">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1" name="locationID" type="s:long" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="getReviewCountResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1" name="getReviewCountResult" type="s:long" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetBusinessDetail">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="locationID" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetBusinessDetailResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetBusinessDetailResult" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetMainBanners">
+        <s:complexType />
+      </s:element>
+      <s:element name="GetMainBannersResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetMainBannersResult" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+    </s:schema>
+  </wsdl:types>
+  <wsdl:message name="GetLocationSuggestionsSoapIn">
+    <wsdl:part name="parameters" element="tns:GetLocationSuggestions" />
+  </wsdl:message>
+  <wsdl:message name="GetLocationSuggestionsSoapOut">
+    <wsdl:part name="parameters" element="tns:GetLocationSuggestionsResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetSearchSuggestionsSoapIn">
+    <wsdl:part name="parameters" element="tns:GetSearchSuggestions" />
+  </wsdl:message>
+  <wsdl:message name="GetSearchSuggestionsSoapOut">
+    <wsdl:part name="parameters" element="tns:GetSearchSuggestionsResponse" />
+  </wsdl:message>
+  <wsdl:message name="createReviewSoapIn">
+    <wsdl:part name="parameters" element="tns:createReview" />
+  </wsdl:message>
+  <wsdl:message name="createReviewSoapOut">
+    <wsdl:part name="parameters" element="tns:createReviewResponse" />
+  </wsdl:message>
+  <wsdl:message name="getStarCountSoapIn">
+    <wsdl:part name="parameters" element="tns:getStarCount" />
+  </wsdl:message>
+  <wsdl:message name="getStarCountSoapOut">
+    <wsdl:part name="parameters" element="tns:getStarCountResponse" />
+  </wsdl:message>
+  <wsdl:message name="getReviewCountSoapIn">
+    <wsdl:part name="parameters" element="tns:getReviewCount" />
+  </wsdl:message>
+  <wsdl:message name="getReviewCountSoapOut">
+    <wsdl:part name="parameters" element="tns:getReviewCountResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetBusinessDetailSoapIn">
+    <wsdl:part name="parameters" element="tns:GetBusinessDetail" />
+  </wsdl:message>
+  <wsdl:message name="GetBusinessDetailSoapOut">
+    <wsdl:part name="parameters" element="tns:GetBusinessDetailResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetMainBannersSoapIn">
+    <wsdl:part name="parameters" element="tns:GetMainBanners" />
+  </wsdl:message>
+  <wsdl:message name="GetMainBannersSoapOut">
+    <wsdl:part name="parameters" element="tns:GetMainBannersResponse" />
+  </wsdl:message>
+  <wsdl:portType name="SearchHelperSoap">
+    <wsdl:operation name="GetLocationSuggestions">
+      <wsdl:input message="tns:GetLocationSuggestionsSoapIn" />
+      <wsdl:output message="tns:GetLocationSuggestionsSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetSearchSuggestions">
+      <wsdl:input message="tns:GetSearchSuggestionsSoapIn" />
+      <wsdl:output message="tns:GetSearchSuggestionsSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="createReview">
+      <wsdl:input message="tns:createReviewSoapIn" />
+      <wsdl:output message="tns:createReviewSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="getStarCount">
+      <wsdl:input message="tns:getStarCountSoapIn" />
+      <wsdl:output message="tns:getStarCountSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="getReviewCount">
+      <wsdl:input message="tns:getReviewCountSoapIn" />
+      <wsdl:output message="tns:getReviewCountSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetBusinessDetail">
+      <wsdl:input message="tns:GetBusinessDetailSoapIn" />
+      <wsdl:output message="tns:GetBusinessDetailSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetMainBanners">
+      <wsdl:input message="tns:GetMainBannersSoapIn" />
+      <wsdl:output message="tns:GetMainBannersSoapOut" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="SearchHelperSoap" type="tns:SearchHelperSoap">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="GetLocationSuggestions">
+      <soap:operation soapAction="http://www.WhereYouDey.com/WhereYouDeyWebServices/SearchHelper.asmx/GetLocationSuggestions" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetSearchSuggestions">
+      <soap:operation soapAction="http://www.WhereYouDey.com/WhereYouDeyWebServices/SearchHelper.asmx/GetSearchSuggestions" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="createReview">
+      <soap:operation soapAction="http://www.WhereYouDey.com/WhereYouDeyWebServices/SearchHelper.asmx/createReview" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getStarCount">
+      <soap:operation soapAction="http://www.WhereYouDey.com/WhereYouDeyWebServices/SearchHelper.asmx/getStarCount" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getReviewCount">
+      <soap:operation soapAction="http://www.WhereYouDey.com/WhereYouDeyWebServices/SearchHelper.asmx/getReviewCount" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetBusinessDetail">
+      <soap:operation soapAction="http://www.WhereYouDey.com/WhereYouDeyWebServices/SearchHelper.asmx/GetBusinessDetail" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetMainBanners">
+      <soap:operation soapAction="http://www.WhereYouDey.com/WhereYouDeyWebServices/SearchHelper.asmx/GetMainBanners" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:binding name="SearchHelperSoap12" type="tns:SearchHelperSoap">
+    <soap12:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="GetLocationSuggestions">
+      <soap12:operation soapAction="http://www.WhereYouDey.com/WhereYouDeyWebServices/SearchHelper.asmx/GetLocationSuggestions" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetSearchSuggestions">
+      <soap12:operation soapAction="http://www.WhereYouDey.com/WhereYouDeyWebServices/SearchHelper.asmx/GetSearchSuggestions" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="createReview">
+      <soap12:operation soapAction="http://www.WhereYouDey.com/WhereYouDeyWebServices/SearchHelper.asmx/createReview" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getStarCount">
+      <soap12:operation soapAction="http://www.WhereYouDey.com/WhereYouDeyWebServices/SearchHelper.asmx/getStarCount" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getReviewCount">
+      <soap12:operation soapAction="http://www.WhereYouDey.com/WhereYouDeyWebServices/SearchHelper.asmx/getReviewCount" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetBusinessDetail">
+      <soap12:operation soapAction="http://www.WhereYouDey.com/WhereYouDeyWebServices/SearchHelper.asmx/GetBusinessDetail" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetMainBanners">
+      <soap12:operation soapAction="http://www.WhereYouDey.com/WhereYouDeyWebServices/SearchHelper.asmx/GetMainBanners" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="SearchHelper">
+    <wsdl:port name="SearchHelperSoap" binding="tns:SearchHelperSoap">
+      <soap:address location="http://www.whereyoudey.com/WhereYouDeyWebServices/SearchHelper.asmx" />
+    </wsdl:port>
+    <wsdl:port name="SearchHelperSoap12" binding="tns:SearchHelperSoap12">
+      <soap12:address location="http://www.whereyoudey.com/WhereYouDeyWebServices/SearchHelper.asmx" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

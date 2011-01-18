@@ -72,9 +72,9 @@ public class Section {
         desc.setText(description);
     }
 
-    public void addComponents(Component comp) {
-        comp.getStyle().setMargin(Component.LEFT, 10);
-        comp.getSelectedStyle().setMargin(Component.LEFT, 10);
+    public void addComponent(Component comp) {
+        comp.getStyle().setMargin(Component.LEFT, 0);
+        comp.getSelectedStyle().setMargin(Component.LEFT, 0);
         container.addComponent(comp);
     }
 }

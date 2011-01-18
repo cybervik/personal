@@ -79,4 +79,23 @@ public class BusinessResultsForm extends ResultForm {
     protected String getTitleProperty() {
         return "Name";
     }
+
+    protected String getTitle() {
+        String title = "";
+        BusinessSearchForm form = null;
+        try {
+            form = (BusinessSearchForm) callingForm;
+            title = "Results for " + form.getSearchBusinessText();
+            final String area = form.getSearchAreaText();
+            if (!UiUtil.isEmpty(area)) {
+                title += (" near " + area);
+            }
+        } catch (Exception e) {
+            System.out.println("Exception while generating title.");
+            System.out.println("Is callingform null - " + (callingForm == null));
+            System.out.println("Is casted form null - " + (form == null));
+            System.out.println("Is calling form of type BusinessSearchForm - " + (form instanceof BusinessSearchForm));
+        }
+        return title;
+    }
 }

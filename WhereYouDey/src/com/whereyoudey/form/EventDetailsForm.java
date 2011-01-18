@@ -16,16 +16,16 @@ import com.whereyoudey.utils.UiUtil;
  */
 public class EventDetailsForm extends DetailsForm {
 
-    private Label date;
+    private Section date;
     private Label address1;
     private Label address2;
     private Label telephone;
-    private Label venue;
     private Label website;
     private Section description;
+    private Section venue;
     private Section keywords;
     private String primaryPhoneProperty;
-    private Label category;
+    private Section category;
 
     public EventDetailsForm(WhereYouDey midlet, ResultForm callingForm) {
         super(midlet, callingForm);
@@ -55,15 +55,15 @@ public class EventDetailsForm extends DetailsForm {
         final String website = result.getProperty("Website");
         final String category = result.getProperty("CategoryName");
         setPrimaryPhoneProperty(telephone1, telephone2);
-        this.date.setText(date);
-        this.venue.setText(venue);
+        this.date.setDetails(date);
+        this.venue.setDetails(venue);
         address1.setText(UiUtil.getCommaSepFormat(street, area));
         address2.setText(UiUtil.getCommaSepFormat(city, state));
         telephone.setText(UiUtil.getCommaSepFormat(telephone1, telephone2));
         this.website.setText(website);
         this.keywords.setDetails(keywords);
         this.description.setDetails(description);
-        this.category.setText(category);
+        this.category.setDetails(category);
     }
 
     private void setPrimaryPhoneProperty(final String telephone1, final String telephone2) {
@@ -71,18 +71,21 @@ public class EventDetailsForm extends DetailsForm {
     }
 
     protected void addBasicInfo() {
-        date = addSmallFontLabel("");
-        venue = addSmallFontLabel("");
         address1 = addSmallFontLabel("");
         address2 = addSmallFontLabel("");
-        category = addSmallFontLabel("");
-        telephone = addSmallFontLabel("");
-        website = addSmallFontLabel("");
+        //date = addSmallFontLabel("");
+        //venue = addSmallFontLabel("");
+        //category = addSmallFontLabel("");
+        //telephone = addSmallFontLabel("");
+        //website = addSmallFontLabel("");
     }
 
     protected void addFormSpecificSections() {
         description = new Section(form, "Description", "");
-        keywords = new Section(form, "Key Words", "");
+        venue = new Section(form, "Venue Details", "");
+        date = new Section(form, "Date and Time", "");
+        category = new Section(form, "Event Category", "");
+        keywords = new Section(form, "Keywords", "");
     }
 
     protected String getAddress() {

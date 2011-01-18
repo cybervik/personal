@@ -12,6 +12,7 @@ import java.io.InputStreamReader;
 import org.kxml2.io.KXmlParser;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
+import searchhelper.SearchHelper_Stub;
 
 public class SearchService {
 
@@ -114,5 +115,40 @@ public class SearchService {
             ex.printStackTrace();
         }
         return movies;
+    }
+
+    public Result[] getBanners() {
+        Result[] banners = new Result[0];
+        try {
+            SearchHelper_Stub stub = new SearchHelper_Stub();
+            final String mainBannersAsXmlS = stub.getMainBanners();
+            System.out.println("Banners -> " + mainBannersAsXmlS);
+            banners = processResponse(mainBannersAsXmlS, "SearchResults", "Result");
+        } catch (XmlPullParserException ex) {
+            ex.printStackTrace();
+        } catch (RemoteException ex) {
+            ex.printStackTrace();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+        return banners;
+    }
+
+    public Result getBannerDetails(String bannerId) {
+        try {
+            SearchHelper_Stub stub = new SearchHelper_Stub();
+            final String bannerDetailsAsXml = stub.getBusinessDetail(bannerId);
+            final Result[] banners = processResponse(bannerDetailsAsXml, "SearchResults", "Result");
+            if (banners.length > 0) {
+                return banners[0];
+            }
+        } catch (XmlPullParserException ex) {
+            ex.printStackTrace();
+        } catch (RemoteException ex) {
+            ex.printStackTrace();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+        return null;
     }
 }
