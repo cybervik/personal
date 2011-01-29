@@ -16,7 +16,7 @@ import javax.microedition.io.PushRegistry;
  */
 public class SchedulerService {
 
-    public static final int SCHEDULE_INTERVAL_IN_SECONDS = 60;
+    public static final int SCHEDULE_INTERVAL_IN_SECONDS = 60 * 5;
     public static final int SCHEDULE_INTERVAL_IN_MILLIS = SCHEDULE_INTERVAL_IN_SECONDS * 1000;
 
     public static void removeScheduler() {

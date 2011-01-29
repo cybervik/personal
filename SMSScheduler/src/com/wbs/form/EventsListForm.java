@@ -24,6 +24,7 @@ import com.wbs.SMSScheduler;
 import com.wbs.constant.Color;
 import com.wbs.form.decorator.FontUtil;
 import com.wbs.service.PersistenceService;
+import com.wbs.utils.UiUtil;
 import java.util.Date;
 import java.util.Vector;
 import javax.microedition.io.Connector;
@@ -56,6 +57,15 @@ public class EventsListForm implements ActionListener {
         initialize();
         addHeader();
         addSpacer();
+//        addSampleData();
+        addEventsList();
+        addCommands();
+        initEventForm();
+        form.show();
+        selectEvent();
+    }
+
+    private void addSampleData() {
         Event e = new Event("Test", "Tester", new Date());
         eventsData.addElement(e);
         e = new Event("India", "Where is it", new Date());
@@ -64,11 +74,6 @@ public class EventsListForm implements ActionListener {
         eventsData.addElement(e);
         e = new Event("Heloo", "Dude are u mad?", new Date());
         eventsData.addElement(e);
-        addEventsList();
-        addMenuOptions();
-        initEventForm();
-        form.show();
-        selectEvent();
     }
 
     public void deleteEvent() {
@@ -94,7 +99,7 @@ public class EventsListForm implements ActionListener {
     }
 
     private void loadEvents() {
-        addEventRow("Scheduled Events (" + eventsData.size() + ")", "", Color.WHITE);
+        addEventRow("Scheduled Events", "", Color.WHITE);
         int bgColor;
         for (int i = 0; i < eventsData.size(); i++) {
             final Event event = (Event) eventsData.elementAt(i);
@@ -102,6 +107,9 @@ public class EventsListForm implements ActionListener {
             String due = event.getDueDate().getFullTime();
             bgColor = getBgColor(i);
             addEventRow(name, due, bgColor);
+        }
+        if (selectedPos < 1 || selectedPos >= eventsList.getComponentCount()) {
+            selectedPos = (eventsData.size() > 0) ? 1 : 0;
         }
     }
 
@@ -164,7 +172,9 @@ public class EventsListForm implements ActionListener {
     }
 
     public void reloadEventsIfNecessary() {
-        if (this.form.isVisible()) {
+        final boolean visible = this.form.isVisible();
+        log("Is form visible - " + visible);
+        if (visible) {
             reloadEvents();
         }
     }
@@ -178,32 +188,47 @@ public class EventsListForm implements ActionListener {
         }
     }
 
-    private void addMenuOptions() {
-        addCommand(COMMAND_EXIT);
-        addCommand(COMMAND_HELP);
+    private void addCommands() {
+        addCommand(COMMAND_OPEN); //Middle
+        addCommand(COMMAND_ADD); //Left
+        addCommand(COMMAND_EXIT); //Last in menu
         addCommand(COMMAND_ABOUT);
-        addCommand(COMMAND_DELETE);
-        addCommand(COMMAND_ADD);
-        addCommand(COMMAND_OPEN);
+        addCommand(COMMAND_HELP);
+        addCommand(COMMAND_DELETE);//First in menu
         form.addCommandListener(this);
     }
 
     private void addHeader() {
         Container container = new Container(new BoxLayout((BoxLayout.X_AXIS)));
+        
+//        Label logo = new Label("WBS");
+//        logo.getStyle().setBgColor(0xB40404);
+//        logo.getStyle().setFgColor(0xFFFFFF);
+//        Font bigNormalFont = Font.createSystemFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_LARGE);
+//        logo.getStyle().setFont(bigNormalFont);
+//        logo.setAlignment(Component.RIGHT);
+        final int logoWidth = Display.getInstance().getDisplayWidth() / 100 * 40;
+        final Label logoLabel = UiUtil.getImageLabel("/img/logo.jpg", logoWidth);
+//        logoLabel.setAlignment(Label.RIGHT);
+        container.addComponent(logoLabel);
 
-        Label logo = new Label("WBS");
-        logo.getStyle().setBgColor(0xB40404);
-        logo.getStyle().setFgColor(0xFFFFFF);
-        Font bigNormalFont = Font.createSystemFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_LARGE);
-        logo.getStyle().setFont(bigNormalFont);
-        logo.setAlignment(Component.RIGHT);
-        container.addComponent(logo);
+//        Container appNameContainer = new Container(new BoxLayout(BoxLayout.Y_AXIS));
+        Label appNameFirstLine = new Label(this.APP_NAME);
+        appNameFirstLine.getStyle().setFont(FontUtil.getMediumBoldFont());
+//        appNameFirstLine.setAlignment(Component.LEFT);
+//        appNameFirstLine.getStyle().setMargin(0, 0, 0, 0);
+//        appNameFirstLine.getStyle().setPadding(0, 0, 0, 0);
+        container.addComponent(appNameFirstLine);
 
-        Label label = new Label(this.APP_NAME);
-        Font mediumFont = FontUtil.getLargeBoldFont();
-        label.getStyle().setFont(mediumFont);
-        label.setAlignment(Component.LEFT);
-        container.addComponent(label);
+//        Label appNameSecondLine = new Label("Scheduler");
+//        appNameSecondLine.getStyle().setFont(FontUtil.getMediumBoldFont());
+//        appNameSecondLine.setAlignment(Component.LEFT);
+//        appNameSecondLine.getStyle().setMargin(0, 0, 0, 0);
+//        appNameSecondLine.getStyle().setPadding(0, 0, 0, 0);
+//        appNameContainer.addComponent(appNameSecondLine);
+        
+//        container.addComponent(appNameContainer);
+
         form.addComponent(container);
     }
 
@@ -246,9 +271,7 @@ public class EventsListForm implements ActionListener {
             if (COMMAND_OPEN.equals(commandName)) {
                 editSchedule();
             } else if (COMMAND_EXIT.equals(commandName)) {
-                if (DialogUtil.showConfirm("Exit Confirm", "Are you sure you want to exit?")) {
-                    smsScheduler.exit();
-                }
+                smsScheduler.exit();
             } else if (COMMAND_ABOUT.equals(commandName)) {
                 DialogUtil.showInfo("About", "SMS Schedule by WBS");
             } else if (COMMAND_HELP.equals(commandName)) {
@@ -316,7 +339,7 @@ public class EventsListForm implements ActionListener {
                 final int y1 = rect.getY() + rect.getSize().getHeight();
                 final int x2 = x1 + rect.getSize().getWidth();
                 final int y2 = y1;
-                g.drawLine( x1, y1, x2, y2);
+                g.drawLine(x1, y1, x2, y2);
             }
         });
         for (int i = 0; i < scheduleRow.getComponentCount(); i++) {

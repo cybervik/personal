@@ -6,6 +6,7 @@ package com.wbs.form.decorator;
 
 import com.wbs.constant.Color;
 import com.sun.lwuit.Button;
+import com.sun.lwuit.Container;
 import com.sun.lwuit.Form;
 import com.sun.lwuit.list.DefaultListCellRenderer;
 import com.wbs.logging.Logger;

@@ -28,7 +28,7 @@ public class EventsService {
         for (int i = 0; i < eventsCount; i++) {
             final Event e = (Event) events.elementAt(i);
             if (!e.isDue()) {
-                return;
+                continue;
             }
             final String message = e.getMessage();
             if (e.isSelfEvent()) {

@@ -72,7 +72,7 @@ public class CustomDate {
         return dateStr;
     }
 
-    void add(String recurringType, String recurringPeriod) {
+    void add(String recurringPeriod, String recurringType) {
         if (recurringType == null || "".equals(recurringType.trim())) {
             return;
         }

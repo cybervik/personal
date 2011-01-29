@@ -12,39 +12,32 @@ import com.sun.lwuit.Command;
 import com.sun.lwuit.Component;
 import com.sun.lwuit.Container;
 import com.sun.lwuit.Dialog;
+import com.sun.lwuit.Display;
 import com.sun.lwuit.Font;
 import com.sun.lwuit.Form;
 import com.sun.lwuit.Image;
 import com.sun.lwuit.Label;
-import com.sun.lwuit.List;
 import com.sun.lwuit.TextArea;
 import com.sun.lwuit.TextField;
 import com.sun.lwuit.events.ActionEvent;
 import com.sun.lwuit.events.ActionListener;
-import com.sun.lwuit.events.DataChangedListener;
 import com.sun.lwuit.events.FocusListener;
 import com.sun.lwuit.layouts.BorderLayout;
 import com.sun.lwuit.layouts.BoxLayout;
 import com.sun.lwuit.layouts.FlowLayout;
 import com.sun.lwuit.list.DefaultListCellRenderer;
-import com.sun.lwuit.list.DefaultListModel;
-import com.sun.lwuit.list.ListCellRenderer;
-import com.sun.lwuit.list.ListModel;
 import com.sun.lwuit.plaf.Border;
 import com.sun.lwuit.plaf.Style;
 import com.wbs.SMSScheduler;
 import com.wbs.constant.Color;
+import com.wbs.form.decorator.FontUtil;
 import com.wbs.form.decorator.FormCommonDecorator;
+import com.wbs.logging.Logger;
+import com.wbs.utils.UiUtil;
 import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.Vector;
-import javax.microedition.pim.Contact;
-import javax.microedition.pim.ContactList;
-import javax.microedition.pim.PIM;
-import javax.microedition.pim.PIMException;
-import javax.microedition.pim.PIMList;
 
 /**
  *
@@ -52,6 +45,7 @@ import javax.microedition.pim.PIMList;
  */
 class EventEditForm implements ActionListener {
 
+    public static final String BLANK_VALUE = "  ";
     public static final String OPTION_SELECT = "Select";
     public static final String RECURRING_DAY = "Day";
     public static final String RECURRING_HOUR = "Hour";
@@ -62,27 +56,26 @@ class EventEditForm implements ActionListener {
     public static final String RECURRING_YEAR = "Year";
     public static final String SELECT_DUE_DATE = "DueDate";
     private static final String[] RECURRING_TYPES = {RECURRING_NONE, RECURRING_MINUTE, RECURRING_HOUR, RECURRING_DAY, RECURRING_WEEK, RECURRING_MONTH, RECURRING_YEAR};
-    private static final String[] RECIPIENTS_TEST_DATA = {"Abhay Shenvi", "+919945678903", "Vikram Subbarao", "Ramesh Home"};
     private final SMSScheduler smsScheduler;
     private Form form = null;
     private TextField eventName;
     private TextArea eventMessage;
     private final CheckBox selfEvent;
-    private Container recipientsContainer;
     private Button addRecpientsButton;
     private DateLabel due;
     private Label dueButton;
-    private TextField recurringPeriod;
     private ComboBox recurringType;
     private boolean editMode = false;
     private String focussed;
     final Command selectCommand = new Command(OPTION_SELECT);
-    private TextField phoneNumberField;
-    private List recipientsList;
-    private Vector recipients = new Vector();
+    private RecipientsContainer recipientsList;
+    private Vector recipientsData = new Vector();
     private Container header;
     private ComboBox hour;
     private ComboBox minute;
+    private ComboBox recurringPeriod;
+    private Event event;
+    private Vector addressBook;
 
     public EventEditForm(SMSScheduler smsScheduler) {
         this.smsScheduler = smsScheduler;
@@ -101,95 +94,33 @@ class EventEditForm implements ActionListener {
         form = FormCommonDecorator.decorate(form);
     }
 
-    protected String getContactField(final Contact c, final int field) {
-        String v = "";
-        try {
-            v = c.getString(field, 0);
-        } catch (Exception e) {
-        }
-        return v;
-    }
-
-    protected Vector getContacts() {
-        final PIM pim = PIM.getInstance();
-        final String[] listPIMLists = pim.listPIMLists(PIM.CONTACT_LIST);
-        boolean nameSupported = false;
-        boolean mobileSupported = false;
-        boolean homePhoneSupported = false;
-        boolean workPhoneSupported = false;
-        boolean telSupported = false;
-        String name = null;
-        String mobile = null;
-        String homePhone = null;
-        String workPhone = null;
-        String telePhone = null;
-        Vector phoneEntries = new Vector();
-        for (int i = 0; i < listPIMLists.length; i++) {
-            try {
-                System.out.println("Displaying contacts from - " + listPIMLists[i]);
-                final PIMList contactList = pim.openPIMList(PIM.CONTACT_LIST, PIM.READ_ONLY, listPIMLists[i]);
-                if (contactList.isSupportedField(Contact.FORMATTED_NAME)) {
-                    nameSupported = true;
-                } else {
-                    nameSupported = false;
-                }
-                if (contactList.isSupportedField(Contact.ATTR_MOBILE)) {
-                    mobileSupported = true;
-                } else {
-                    mobileSupported = false;
-                }
-                if (contactList.isSupportedField(Contact.ATTR_HOME)) {
-                    homePhoneSupported = true;
-                } else {
-                    homePhoneSupported = false;
-                }
-                if (contactList.isSupportedField(Contact.ATTR_WORK)) {
-                    workPhoneSupported = true;
-                } else {
-                    workPhoneSupported = false;
-                }
-                if (contactList.isSupportedField(Contact.TEL)) {
-                    telSupported = true;
-                } else {
-                    telSupported = false;
-                }
-                final Enumeration items = contactList.items();
-                while (items.hasMoreElements()) {
-                    final Contact c = (Contact) items.nextElement();
-                    if (nameSupported) {
-                        name = getContactField(c, Contact.FORMATTED_NAME);
-                    }
-                    if (mobileSupported) {
-                        mobile = getContactField(c, Contact.ATTR_MOBILE);
-                        addPhoneEntry(name, mobile, phoneEntries);
-                    }
-                    if (homePhoneSupported) {
-                        homePhone = getContactField(c, Contact.ATTR_HOME);
-                        addPhoneEntry(name, homePhone, phoneEntries);
-                    }
-                    if (workPhoneSupported) {
-                        workPhone = getContactField(c, Contact.ATTR_WORK);
-                        addPhoneEntry(name, workPhone, phoneEntries);
-                    }
-                    if (telSupported) {
-                        telePhone = getContactField(c, Contact.TEL);
-                        addPhoneEntry(name, telePhone, phoneEntries);
-                    }
-                    System.out.println("Name: " + name + ", mobile: " + mobile + ", home: " + homePhone + ", work: " + workPhone + ", tel: " + telePhone);
-                }
-            } catch (PIMException ex) {
-                ex.printStackTrace();
-            }
-        }
-        return phoneEntries;
-    }
-
-    private void addPhoneEntry(String name, String telePhone, Vector phoneEntries) {
-        PhoneEntry phoneEntry = new PhoneEntry(name, telePhone);
-        phoneEntries.addElement(phoneEntry);
+    private void applyDefaultComboxBoxStyle(ComboBox cb) {
+        DefaultListCellRenderer renderer = (DefaultListCellRenderer) cb.getRenderer();
+        renderer.getStyle().setFont(getSmallNormalFont());
+        renderer.getStyle().setBgColor(Color.WHITE);
+        renderer.getSelectedStyle().setFont(getSmallBoldFont());
+        renderer.getSelectedStyle().setBgColor(Color.EVENTLIST_SELECTEDITEM_BACKGROUND);
+        cb.getSelectedStyle().setBgColor(Color.EVENTLIST_SELECTEDITEM_BACKGROUND);
+        cb.setSelectedItem(RECURRING_NONE);
     }
 
     protected void save() {
+        Event event = generateEvent();
+        EventsListForm listForm = smsScheduler.getListForm();
+        if (editMode) {
+            listForm.saveEvent(event);
+        } else {
+            listForm.addEvent(event);
+        }
+        listForm.show(true);
+    }
+
+    private void delete() {
+        smsScheduler.getListForm().deleteEvent();
+        smsScheduler.getListForm().show();
+    }
+
+    private Event generateEvent() {
         EventsListForm listForm = smsScheduler.getListForm();
         final String eventName = this.eventName.getText();
         final String eventMessage = this.eventMessage.getText();
@@ -199,76 +130,109 @@ class EventEditForm implements ActionListener {
         cal.set(Calendar.HOUR_OF_DAY, getInt(hour.getSelectedItem().toString()));
         cal.set(Calendar.MINUTE, getInt(minute.getSelectedItem().toString()));
         Date dueDate = cal.getTime();
-        final String period = this.recurringPeriod.getText();
-        final String type = this.recurringType.getSelectedItem().toString();
+        final String recurringPeriod = this.recurringPeriod.getSelectedItem().toString();
+        final String recurringType = this.recurringType.getSelectedItem().toString();
         Event event = new Event();
         event.setName(eventName);
         event.setMessage(eventMessage);
         event.setSelfEvent(selfEvent);
-        event.setRecipients(recipients);
+        event.setRecipients(recipientsData);
         event.setDueDate(dueDate);
-        event.setRecurring(type, period);
-        if (editMode) {
-            listForm.saveEvent(event);
-        } else {
-            listForm.addEvent(event);
-        }
-        listForm.show(true);
+        event.setRecurringType(recurringType);
+        event.setRecurringPeriod(recurringPeriod);
+        return event;
     }
 
     protected boolean valid() {
         final EventsListForm listForm = smsScheduler.getListForm();
-        final String eventName = this.eventName.getText();
-        final String eventMessage = this.eventMessage.getText();
-        if (eventName.trim().equalsIgnoreCase("")) {
+        final String eventNameTxt = this.eventName.getText();
+        final String eventMessageTxt = this.eventMessage.getText();
+        Logger.logInfo("this.recurringPeriod.getSelectedItem().toString() - " + this.recurringPeriod.getSelectedItem().toString());
+        Logger.logInfo("this.recurringType.getSelectedItem().toString() - " + this.recurringType.getSelectedItem().toString());
+        Logger.logInfo("RECURRING_NONE - " + RECURRING_NONE);
+        Logger.logInfo("isEmpty(this.recurringPeriod.getSelectedItem().toString()) - " + isEmpty(this.recurringPeriod.getSelectedItem().toString())
+                       + "- !this.recurringType.getSelectedItem().toString().equals(RECURRING_NONE) - " + !this.recurringType.getSelectedItem().toString().equals(RECURRING_NONE));
+        if (eventNameTxt.trim().equalsIgnoreCase("")) {
             DialogUtil.showInfo("Error", "Please enter event name");
+            form.setFocused(this.eventName);
             return false;
-        } else if (eventMessage.trim().equalsIgnoreCase("")) {
+        } else if (eventMessageTxt.trim().equalsIgnoreCase("")) {
             DialogUtil.showInfo("Error", "Please enter event message");
+            form.setFocused(this.eventMessage);
             return false;
-        } else if (!selfEvent.isSelected() && recipients.isEmpty()) {
+        } else if (!selfEvent.isSelected() && recipientsData.isEmpty()) {
             DialogUtil.showInfo("Error", "Please add a recipient");
+            form.setFocused(this.addRecpientsButton);
+            form.scrollComponentToVisible(this.addRecpientsButton);
             return false;
-        } else if (!isInt(recurringPeriod.getText())) {
-            DialogUtil.showInfo("Error", "Please enter a valid recurring period");
+        } else if (isEmpty(this.recurringPeriod.getSelectedItem().toString())
+                       && !this.recurringType.getSelectedItem().toString().equals(RECURRING_NONE)) {
+            DialogUtil.showInfo("Error", "Please select recurring period");
+            form.setFocused(this.recurringPeriod);
             return false;
         } else {
             return true;
         }
     }
 
-    private void clearRecipientsList() {
-        for (int i = 0; i < this.recipientsList.size(); i++) {
-            this.recipientsList.getModel().removeItem(i);
+    private void goBack() {
+        if (isDirty() && DialogUtil.showConfirm("Alert", "Do you want to save data?")) {
+            validateAndSave();
+        } else {
+            final EventsListForm listForm = smsScheduler.getListForm();
+            listForm.show();
         }
+    }
+
+    private boolean isEmpty(String s) {
+        return s == null || "".equals(s.trim());
+    }
+
+    private void clearRecipientsList() {
+        recipientsList.clear();
+//        for (int i = 0; i < this.recipientsList.size(); i++) {
+//            this.recipientsList.getModel().removeItem(i);
+//        }
         addRecpientsButton.setEnabled(false);
     }
 
-    private ComboBox getComboBox(final int size) {
-        final Font smallBoldFont = getSmallBoldFont();
+    private ComboBox getComboBox(final int size, boolean startWithZero, boolean defaultIsBlank) {
         final ComboBox cb = new ComboBox();
-//        cb.getStyle().setFont(getSmallNormalFont());
-//        cb.getStyle().setBgColor(Colors.WHITE);
-//        cb.getSelectedStyle().setFont(smallBoldFont);
-//        cb.getSelectedStyle().setBgColor(EventsListForm.COLOR_SCHEDULES_SELECTED_BACKGROUND);
-        DefaultListCellRenderer renderer = (DefaultListCellRenderer) cb.getRenderer();
-        final ListCellRenderer renderer1 = cb.getRenderer();
-        renderer.getStyle().setFont(getSmallNormalFont());
-        renderer.getStyle().setBgColor(Color.WHITE);
-        renderer.getSelectedStyle().setFont(smallBoldFont);
-        renderer.getSelectedStyle().setBgColor(Color.EVENTLIST_SELECTEDITEM_BACKGROUND);
-//        renderer.setPreferredW(smallBoldFont.stringWidth("1000"));
-        for (int i = 0; i < size; i++) {
-            cb.addItem(String.valueOf(i));
+//        DefaultListCellRenderer renderer = (DefaultListCellRenderer) cb.getRenderer();
+//        renderer.getStyle().setFont(getSmallNormalFont());
+//        renderer.getStyle().setBgColor(Color.WHITE);
+//        renderer.getSelectedStyle().setFont(smallBoldFont);
+//        renderer.getSelectedStyle().setBgColor(Color.EVENTLIST_SELECTEDITEM_BACKGROUND);
+//        cb.getSelectedStyle().setBgColor(Color.EVENTLIST_SELECTEDITEM_BACKGROUND);
+        applyDefaultComboxBoxStyle(cb);
+        if (defaultIsBlank) {
+            cb.addItem(BLANK_VALUE);
+            cb.setSelectedIndex(0);
+        }
+        for (int i = startWithZero ? 0 : 1; i < size; i++) {
+            String data = String.valueOf(i);
+            if (data.length() == 1) {
+                data = "0" + data;
+            }
+            cb.addItem(data);
         }
         return cb;
+    }
+
+    private void removeRecipient() {
+        final int deletedPos = this.recipientsList.removeSelected();
+        this.recipientsData.removeElementAt(deletedPos);
     }
 
     private void setAddRecipientsState() {
         if (!selfEvent.isSelected()) {
             addRecpientsButton.setEnabled(true);
+//            addRecpientsButton.getStyle().setBorder(Border.getDefaultBorder());
+//            addRecpientsButton.getSelectedStyle().setBorder(Border.getDefaultBorder());
         } else {
             addRecpientsButton.setEnabled(false);
+//            addRecpientsButton.getStyle().setBorder(Border.createEmpty());
+//            addRecpientsButton.getSelectedStyle().setBorder(Border.createEmpty());
         }
     }
 
@@ -279,8 +243,17 @@ class EventEditForm implements ActionListener {
         setFocusNavigation(hour, minute, dueButton);
         setFocusNavigation(minute, recurringPeriod, hour);
         setFocusNavigation(recurringPeriod, recurringType, minute);
-        setFocusNavigation(recurringType, header, recurringPeriod);
-        setFocusNavigation(header, eventName, recurringType);
+        setFocusNavigation(recurringType, eventName, recurringPeriod);
+        eventName.addFocusListener(new FocusListener() {
+
+            public void focusGained(Component cmp) {
+                form.scrollComponentToVisible(header);
+            }
+
+            public void focusLost(Component cmp) {
+            }
+        });
+//        setFocusNavigation(header, eventName, recurringType);
     }
 
     private void setFocusNavigation(final Component comp, final Component nextFocusComp, final Component prevFocusComp) {
@@ -293,8 +266,8 @@ class EventEditForm implements ActionListener {
 
             public void actionPerformed(ActionEvent evt) {
                 setSelfEventFocusNavigations();
-                recipientsContainer.refreshTheme();
-                recipientsContainer.repaint();
+//                recipientsContainer.refreshTheme();
+//                recipientsContainer.repaint();
                 form.show();
             }
         });
@@ -303,78 +276,89 @@ class EventEditForm implements ActionListener {
     private void setSelfEventFocusNavigations() {
         if (!selfEvent.isSelected()) {
             addRecpientsButton.setEnabled(true);
-            setFocusNavigation(selfEvent, addRecpientsButton, eventMessage);
-            setFocusNavigation(addRecpientsButton, dueButton, selfEvent);
-            setFocusNavigation(dueButton, recurringPeriod, addRecpientsButton);
+            if (recipientsData.isEmpty()) {
+                setFocusNavigation(selfEvent, addRecpientsButton, eventMessage);
+                setFocusNavigation(addRecpientsButton, dueButton, selfEvent);
+            } else {
+                setFocusNavigation(selfEvent, recipientsList, eventMessage);
+                setFocusNavigation(recipientsList, addRecpientsButton, selfEvent);
+                setFocusNavigation(addRecpientsButton, dueButton, recipientsList);
+            }
+            setFocusNavigation(dueButton, hour, addRecpientsButton);
         } else {
             addRecpientsButton.setEnabled(false);
             setFocusNavigation(selfEvent, dueButton, eventMessage);
-            setFocusNavigation(dueButton, recurringPeriod, selfEvent);
+            setFocusNavigation(dueButton, hour, selfEvent);
         }
     }
 
     private void addRecipients() {
-        recipientsContainer = new Container(new BoxLayout(BoxLayout.Y_AXIS));
-        recipientsList = new List();
-        DefaultListCellRenderer dc = (DefaultListCellRenderer) recipientsList.getRenderer();
-        dc.setShowNumbers(false);
-        final Style style = dc.getStyle();
+        Container recipientsContainer = new Container(new BoxLayout(BoxLayout.Y_AXIS));
+        recipientsList = new RecipientsContainer();
+//        DefaultListCellRenderer dc = (DefaultListCellRenderer) recipientsList.getRenderer();
+//        dc.setShowNumbers(false);
+        final Style style = recipientsList.getStyle();
         style.setFont(getSmallNormalFont());
         style.setBgColor(Color.WHITE);
         style.setMargin(0, 0, 0, 0);
         style.setPadding(0, 0, 0, 0);
-        final Style selectedStyle = dc.getSelectedStyle();
-        selectedStyle.setFont(getSmallNormalFont());
-        selectedStyle.setBgColor(Color.WHITE);
+        final Style selectedStyle = recipientsList.getSelectedStyle();
+        selectedStyle.setFont(getSmallBoldFont());
+        selectedStyle.setBgColor(Color.EVENTLIST_SELECTEDITEM_BACKGROUND);
         selectedStyle.setMargin(0, 0, 0, 0);
         selectedStyle.setPadding(0, 0, 0, 0);
-        recipientsList.setFocusable(false);
+        recipientsList.setFocusable(true);
+//        recipientsList.setPreferredW(com.sun.lwuit.Display.getInstance().getDisplayWidth());
+        form.addKeyListener(-1, recipientsList);
+        form.addKeyListener(-2, recipientsList);
         addLabelledComponent("To: ", recipientsList, recipientsContainer);
         addRecpientsButton = new Button("Add");
         addRecpientsButton.getStyle().setFont(getSmallNormalFont());
+        final Border buttonBorder = Border.createEtchedRaised(Color.EVENTLIST_HEADER_BACKGROUND, Color.EVENTLIST_SELECTEDITEM_BACKGROUND);
+        addRecpientsButton.getStyle().setBorder(buttonBorder, false);
+        addRecpientsButton.getStyle().setMargin(2, 2, 2, 2);
+        addRecpientsButton.getStyle().setPadding(2, 2, 2, 2);
         addRecpientsButton.getSelectedStyle().setFont(getSmallBoldFont());
+        addRecpientsButton.getSelectedStyle().setBgColor(Color.EVENTLIST_SELECTEDITEM_BACKGROUND);
+        addRecpientsButton.getSelectedStyle().setBorder(buttonBorder, false);
+        addRecpientsButton.getSelectedStyle().setMargin(2, 2, 2, 2);
+        addRecpientsButton.getSelectedStyle().setPadding(2, 2, 2, 2);
         addRecpientsButton.setScrollAnimationSpeed(0);
         recipientsContainer.addComponent(addRecpientsButton);
         addRecpientsButton.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent evt) {
-                showRecipientsDialog();
+                showContactsDialog();
             }
         });
         form.addComponent(recipientsContainer);
     }
 
     private void setInitialFocus() {
-        form.scrollComponentToVisible(header);
-        form.scrollComponentToVisible(eventName);
+//        form.scrollComponentToVisible(header);
+//        form.scrollComponentToVisible(eventName);
+        eventName.setFocus(true);
+        form.setFocused(eventName);
     }
 
-    private void showRecipientsDialog() {
-        final Vector contacts = getContacts();
-        Dialog dialog = new Dialog();
+    private void showContactsDialog() {
+        if (addressBook == null) {
+            addressBook = AddressBookService.retrieveContactsFromAddressBook();
+        }
+        final Dialog dialog = new Dialog();
         dialog.setLayout(new BorderLayout());
         dialog.setScrollable(false);
-        dialog.setAutoDispose(true);
-        dialog.addCommand(new Command("Select"));
-        dialog.addCommand(new Command("Cancel"));
+        dialog.setAutoDispose(false);
+        dialog.addCommand(new Command("Save"));
+        dialog.addCommand(new Command("Back"));
+        dialog.addCommand(new Command("Add"));
         final TextField phoneNumber = new TextField();
-        final CustomList list = new CustomList(phoneNumber);
-        for (int i = 0; i < contacts.size(); i++) {
-            PhoneEntry contact = (PhoneEntry) contacts.elementAt(i);
-            final Component contactRow = new ContactRow(contact);
-            list.addComponent(contactRow);
-        }
-        dialog.addKeyListener(-1, list);
-        dialog.addKeyListener(-2, list);
         phoneNumber.getStyle().setFont(getSmallNormalFont());
         phoneNumber.getSelectedStyle().setFont(getSmallNormalFont());
-        phoneNumber.addDataChangeListener(new DataChangedListener() {
-
-            public void dataChanged(int type, int index) {
-                final String text = phoneNumber.getText();
-                list.selectStartingWith(text);
-            }
-        });
+        final ContactsList list = new ContactsList(phoneNumber, recipientsData, addressBook);
+        phoneNumber.addDataChangeListener(list);
+        dialog.addKeyListener(-1, list);
+        dialog.addKeyListener(-2, list);
         dialog.addComponent(BorderLayout.NORTH, phoneNumber);
         dialog.addComponent(BorderLayout.CENTER, list);
         dialog.addCommandListener(new ActionListener() {
@@ -383,22 +367,46 @@ class EventEditForm implements ActionListener {
                 final Command cmd = evt.getCommand();
                 if (cmd != null) {
                     final String commandName = cmd.getCommandName();
-                    if ("Select".equals(commandName)) {
-                        final PhoneEntry pe = list.getSelectedPhoneEntry();
-                        recipients.addElement(pe);
-                        recipientsList.addItem(pe.getDisplayableText());
+                    if ("Save".equals(commandName)) {
+                        recipientsData = list.getSelectedPhoneEntries();
+                        recipientsList.clear();
+                        for (int i = 0; i < recipientsData.size(); i++) {
+                            final PhoneEntry pe = (PhoneEntry) recipientsData.elementAt(i);
+                            recipientsList.addRecipient(pe.getDisplayableText());
+                        }
+                        setSelfEventFocusNavigations();
+                        dialog.dispose();
+                    } else if ("Select".equals(commandName)) {
+                        final ContactRow r = list.getSelectedRow();
+                        r.select();
+                    } else if ("Unselect".equals(commandName)) {
+                        final ContactRow r = list.getSelectedRow();
+                        r.unSelect();
+                    } else if ("Back".equals(commandName)) {
+                        dialog.dispose();
+                    } else if ("Add".equals(commandName)) {
+                        if (!Display.getInstance().isEdt()) {
+                            Display.getInstance().callSerially(new Runnable() {
+
+                                public void run() {
+                                    list.addSearchTextAsContact();
+                                }
+                            });
+                        } else {
+                            list.addSearchTextAsContact();
+                        }
                     }
                 }
             }
         });
+        FormCommonDecorator.decorate(dialog);
         dialog.show(
                 2, 1, 2, 1, true);
     }
 
     private void addDueDate() {
-        addLabel("Due", form);
         Container buttonContainer = new Container(new FlowLayout());
-        addLabel("Date: ", buttonContainer);
+        addLabel("Due Date: ", buttonContainer);
         due = new DateLabel();
         buttonContainer.addComponent(due);
         Image buttonImage = getImage("/img/icons/calendar.png");
@@ -406,6 +414,7 @@ class EventEditForm implements ActionListener {
         button.setFocusable(true);
         button.setFocusPainted(true);
         button.getSelectedStyle().setBorder(Border.createEtchedRaised());
+        button.getSelectedStyle().setBgColor(Color.EVENTLIST_SELECTEDITEM_BACKGROUND);
         button.addFocusListener(new FocusListener() {
 
             public void focusGained(Component cmp) {
@@ -423,11 +432,11 @@ class EventEditForm implements ActionListener {
         buttonContainer.addComponent(button);
         this.dueButton = button;
         form.addComponent(buttonContainer);
-        Container timeContainer = new Container(new BoxLayout(BoxLayout.X_AXIS));
+        Container timeContainer = new Container(new FlowLayout());
         addLabel("Time: ", timeContainer);
-        hour = getComboBox(24);
+        hour = getComboBox(24, true, false);
         timeContainer.addComponent(hour);
-        minute = getComboBox(60);
+        minute = getComboBox(60, true, false);
         timeContainer.addComponent(minute);
         form.addComponent(timeContainer);
     }
@@ -445,6 +454,7 @@ class EventEditForm implements ActionListener {
         CheckBox cb = new CheckBox(Self_Event);
         cb.getStyle().setFont(getSmallNormalFont());
         cb.getSelectedStyle().setFont(getSmallBoldFont());
+        cb.getSelectedStyle().setBgColor(Color.EVENTLIST_SELECTEDITEM_BACKGROUND);
         cb.setSelected(true);
         form.addComponent(cb);
         return cb;
@@ -458,25 +468,23 @@ class EventEditForm implements ActionListener {
     }
 
     private void addRecurring() {
-        Container recurringContainer = new Container(new BoxLayout(BoxLayout.X_AXIS));
-        recurringPeriod = addTextField("Repeat Every   ", recurringContainer);
-        form.addComponent(recurringContainer);
+        Container recurringContainer = new Container(new FlowLayout());
+        addLabel("Repeat ", recurringContainer);
+        recurringPeriod = getComboBox(100, false, true);
+        recurringContainer.addComponent(recurringPeriod);
         recurringType = new ComboBox(RECURRING_TYPES);
-        DefaultListCellRenderer renderer = (DefaultListCellRenderer) recurringType.getRenderer();
-        renderer.getStyle().setFont(getSmallNormalFont());
-        renderer.getStyle().setBgColor(Color.WHITE);
-        renderer.getSelectedStyle().setFont(getSmallBoldFont());
-        renderer.getSelectedStyle().setBgColor(Color.EVENTLIST_SELECTEDITEM_BACKGROUND);
+        applyDefaultComboxBoxStyle(recurringType);
         recurringType.setSelectedItem(RECURRING_NONE);
-        form.addComponent(recurringType);
+        recurringContainer.addComponent(recurringType);
+        form.addComponent(recurringContainer);
     }
 
     private void addCommands() {
         form.addCommand(new Command("Save"));
-        form.addCommand(new Command("Exit"));
-        form.addCommand(new Command("Help"));
-        form.addCommand(new Command("About"));
         form.addCommand(new Command("Back"));
+        form.addCommand(new Command("Exit"));
+        form.addCommand(new Command("About"));
+        form.addCommand(new Command("Help"));
         form.addCommand(new Command("Delete"));
         form.addCommandListener(this);
     }
@@ -492,19 +500,35 @@ class EventEditForm implements ActionListener {
 
     private void addHeader() {
         header = new Container(new BoxLayout((BoxLayout.X_AXIS)));
-        Label logo = new Label("WBS");
-        logo.getStyle().setBgColor(0xB40404);
-        logo.getStyle().setFgColor(Color.WHITE);
-        Font bigBoldFont = Font.createSystemFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_LARGE);
-        logo.getStyle().setFont(bigBoldFont);
-        logo.setAlignment(Component.RIGHT);
-        header.addComponent(logo);
-        Label label = new Label(EventsListForm.APP_NAME);
-        Font mediumFont = getMediumBoldFont();
-        label.getStyle().setFont(mediumFont);
-        label.setAlignment(Component.LEFT);
-        header.addComponent(label);
-        header.setFocusable(true);
+
+//        Label logo = new Label("WBS");
+//        logo.getStyle().setBgColor(0xB40404);
+//        logo.getStyle().setFgColor(0xFFFFFF);
+//        Font bigNormalFont = Font.createSystemFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_LARGE);
+//        logo.getStyle().setFont(bigNormalFont);
+//        logo.setAlignment(Component.RIGHT);
+        final int logoWidth = Display.getInstance().getDisplayWidth() / 100 * 40;
+        final Label logoLabel = UiUtil.getImageLabel("/img/logo.jpg", logoWidth);
+//        logoLabel.setAlignment(Label.RIGHT);
+        header.addComponent(logoLabel);
+
+//        Container appNameContainer = new Container(new BoxLayout(BoxLayout.Y_AXIS));
+        Label appNameFirstLine = new Label(EventsListForm.APP_NAME);
+        appNameFirstLine.getStyle().setFont(FontUtil.getMediumBoldFont());
+//        appNameFirstLine.setAlignment(Component.LEFT);
+//        appNameFirstLine.getStyle().setMargin(0, 0, 0, 0);
+//        appNameFirstLine.getStyle().setPadding(0, 0, 0, 0);
+        header.addComponent(appNameFirstLine);
+
+//        Label appNameSecondLine = new Label("Scheduler");
+//        appNameSecondLine.getStyle().setFont(FontUtil.getMediumBoldFont());
+//        appNameSecondLine.setAlignment(Component.LEFT);
+//        appNameSecondLine.getStyle().setMargin(0, 0, 0, 0);
+//        appNameSecondLine.getStyle().setPadding(0, 0, 0, 0);
+//        appNameContainer.addComponent(appNameSecondLine);
+
+//        container.addComponent(appNameContainer);
+
         form.addComponent(header);
     }
 
@@ -516,8 +540,8 @@ class EventEditForm implements ActionListener {
         TextField textField = new TextField();
         textField.getStyle().setFont(getSmallNormalFont());
         textField.getSelectedStyle().setFont(getSmallNormalFont());
-        addLabelledComponent(
-                fieldName, textField, container);
+        textField.getSelectedStyle().setBgColor(Color.EVENTLIST_SELECTEDITEM_BACKGROUND);
+        addLabelledComponent(fieldName, textField, container);
         return textField;
     }
 
@@ -533,20 +557,21 @@ class EventEditForm implements ActionListener {
         this.minute.setSelectedItem(minStr);
         this.eventMessage.setText(event.getMessage());
         this.selfEvent.setSelected(event.isSelfEvent());
-        this.recurringPeriod.setText(event.getRecurringPeriod());
+        this.recurringPeriod.setSelectedItem(event.getRecurringPeriod());
         this.recurringType.setSelectedItem(event.getRecurringType());
-        this.recipients = event.getRecipients();
+        this.recipientsData = event.getRecipients();
         clearRecipientsList();
-        if (!recipients.isEmpty()) {
+        if (!recipientsData.isEmpty()) {
             addRecpientsButton.setEnabled(true);
         }
-        for (int i = 0; i < recipients.size(); i++) {
-            PhoneEntry r = (PhoneEntry) recipients.elementAt(i);
-            recipientsList.addItem(r.getDisplayableText());
+        for (int i = 0; i < recipientsData.size(); i++) {
+            PhoneEntry r = (PhoneEntry) recipientsData.elementAt(i);
+            recipientsList.addRecipient(r.getDisplayableText());
         }
         setAddRecipientsState();
-        setFocusNavigations();
         setInitialFocus();
+        setFocusNavigations();
+        this.event = event;
         this.form.show();
     }
 
@@ -570,6 +595,7 @@ class EventEditForm implements ActionListener {
         textArea.setRows(3);
         textArea.getStyle().setFont(getSmallNormalFont());
         textArea.getSelectedStyle().setFont(getSmallNormalFont());
+        textArea.getSelectedStyle().setBgColor(Color.EVENTLIST_SELECTEDITEM_BACKGROUND);
         textArea.setEditable(true);
         textArea.setGrowByContent(false);
         textArea.setFocusable(true);
@@ -595,35 +621,32 @@ class EventEditForm implements ActionListener {
         final Command command = evt.getCommand();
         if (command != null) {
             final String commandName = command.getCommandName();
-            final EventsListForm listForm = smsScheduler.getListForm();
             if (commandName.equals("Back")) {
-                listForm.show();
+                goBack();
             } else if (commandName.equals("Save")) {
-                if (valid()) {
-                    save();
-                }
+                validateAndSave();
             } else if ("Exit".equals(commandName)) {
-                if (showConfirm("Exit Confirm", "Are you sure you want to exit?")) {
-                    smsScheduler.exit();
-                }
+                smsScheduler.exit();
             } else if ("About".equals(commandName)) {
-                showInfo("About", "SMS Schedule by WBS");
+                DialogUtil.showInfo("About", "SMS Schedule by WBS");
             } else if ("Help".equals(commandName)) {
-                showInfo("Help", "Help is comming soon.");
+                DialogUtil.showInfo("Help", "Help is comming soon.");
             } else if (commandName.equals(OPTION_SELECT)) {
                 if (SELECT_DUE_DATE.equals(focussed)) {
                     showCalendar();
                 }
+            } else if (commandName.equals("Remove")) {
+                removeRecipient();
+            } else if (commandName.equals("Delete")) {
+                delete();
             }
         }
     }
 
-    private void showInfo(final String title, final String message) {
-        Dialog.show(title, message, "Back", null);
-    }
-
-    private boolean showConfirm(final String title, final String message) {
-        return Dialog.show(title, message, "Ok", "Cancel");
+    private void validateAndSave() {
+        if (valid()) {
+            save();
+        }
     }
 
     void show() {
@@ -634,13 +657,13 @@ class EventEditForm implements ActionListener {
         this.due.setText("dd/mm/yyyy");
         this.hour.setSelectedItem("0");
         this.minute.setSelectedItem("0");
-        this.recurringPeriod.setText("");
         this.recurringType.setSelectedItem(RECURRING_NONE);
-        this.recipients.removeAllElements();
+        this.recipientsData.removeAllElements();
         clearRecipientsList();
         setAddRecipientsState();
         setFocusNavigations();
         setInitialFocus();
+        this.event = new Event();
         this.form.show();
     }
 
@@ -682,5 +705,13 @@ class EventEditForm implements ActionListener {
         } catch (NumberFormatException numberFormatException) {
         }
         return false;
+    }
+
+    private boolean isDirty() {
+        final Event modifiedEvent = generateEvent();
+        final String modifiedData = modifiedEvent.getStorableFormat();
+        final String originalData = this.event.getStorableFormat();
+        Logger.logInfo("Dirty Check - " + originalData + " - " + modifiedData + " - " + modifiedData.equals(originalData));
+        return !modifiedData.equals(originalData);
     }
 }

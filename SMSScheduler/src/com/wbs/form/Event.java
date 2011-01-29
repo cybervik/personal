@@ -18,8 +18,8 @@ public class Event {
     private String message;
     private CustomDate dueDate;
     private boolean selfEvent;
-    private String recurringType;
     private String recurringPeriod;
+    private String recurringType;
     private Vector recipients;
 
     public Event() {
@@ -27,7 +27,7 @@ public class Event {
         message = "";
         dueDate = new CustomDate();
         selfEvent = true;
-        recurringPeriod = "";
+        recurringPeriod = EventEditForm.BLANK_VALUE;
         recurringType = EventEditForm.RECURRING_NONE;
         recipients = new Vector();
     }
@@ -65,19 +65,6 @@ public class Event {
 
     void setDueDate(Date dueDate) {
         this.dueDate.setDate(dueDate);
-    }
-
-    void setRecurring(String type, String period) {
-        this.recurringType = type;
-        this.recurringPeriod = period;
-    }
-
-    public String getRecurringPeriod() {
-        return this.recurringPeriod;
-    }
-
-    public void setRecurringPeriod(String setRecurringPeriod) {
-        this.recurringPeriod = setRecurringPeriod;
     }
 
     public String getRecurringType() {
@@ -162,7 +149,7 @@ public class Event {
     }
 
     public void updateDueDate() {
-        dueDate.add(recurringType, recurringPeriod);
+        dueDate.add(recurringPeriod, recurringType);
     }
 
     public boolean isDue() {
@@ -195,5 +182,13 @@ public class Event {
                     break;
             }
         }
+    }
+
+    void setRecurringPeriod(String recurringPeriod) {
+        this.recurringPeriod = recurringPeriod;
+    }
+
+    public String getRecurringPeriod() {
+        return recurringPeriod;
     }
 }
