@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.whereyoudey.form;
+package com.whereyoudey.form.helper;
 
 import com.whereyoudey.utils.DialogUtil;
 
@@ -26,6 +26,9 @@ public class FormDialogs {
 
     public static boolean showFeatureUnavialbleMessage() {
         return DialogUtil.showConfirm("Help", "This feature is currently unavailable.\n"
-                + "Press ok to visit www.whereyoudey.com for upcomming release or more info.");
+                + "Press ok to visit www.whereyoudey.com for upcoming release or more info.");
+    }
+
+    private FormDialogs() {
     }
 }

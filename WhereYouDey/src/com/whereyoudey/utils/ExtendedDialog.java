@@ -13,7 +13,6 @@ import com.sun.lwuit.Label;
 import com.sun.lwuit.TextArea;
 import com.sun.lwuit.list.DefaultListCellRenderer;
 import com.sun.lwuit.plaf.Border;
-import com.whereyoudey.form.FontUtil;
 
 /**
  *

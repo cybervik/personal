@@ -4,6 +4,7 @@
  */
 package com.whereyoudey.form;
 
+import com.whereyoudey.form.helper.FormDialogs;
 import com.whereyoudey.form.component.Header;
 import com.whereyoudey.utils.SortUtil;
 import com.sun.lwuit.Command;
@@ -93,6 +94,14 @@ public abstract class ResultForm implements ActionListener, Runnable {
             DialogUtil.showInfo("Error", "Phone number not found in this result.");
             return;
         }
+        if (phoneNumber.indexOf(",") >= 0) {
+            phoneNumber = phoneNumber.substring(0, phoneNumber.indexOf(","));
+        }
+        phoneNumber = phoneNumber.trim();
+        if (UiUtil.isEmpty(phoneNumber)) {
+            DialogUtil.showInfo("Error", "Phone number not found in this result.");
+            return;
+        }
         midlet.requestPlatformService("tel:" + phoneNumber);
     }
 
@@ -176,7 +185,7 @@ public abstract class ResultForm implements ActionListener, Runnable {
 
     private void initForm() {
         form = new ExtendedForm();
-        form.setScrollableX(true);
+        form.setScrollableX(false);
         form.setScrollableY(false);
         form.setLayout(new BorderLayout());
         form.addKeyListener(-1, this);

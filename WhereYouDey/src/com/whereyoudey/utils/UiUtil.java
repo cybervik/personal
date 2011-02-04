@@ -67,7 +67,7 @@ public class UiUtil {
         return img;
     }
 
-    private static Label getLabel(Image img) {
+    public static Label getLabel(Image img) {
         Label imageLabel = new Label(img);
         imageLabel.setAlignment(Component.CENTER);
         return imageLabel;
@@ -107,16 +107,17 @@ public class UiUtil {
         container.addComponent(label);
     }
 
-    public static void addSmallFontLabel(Container listingContainer, final String text) {
+    public static Label addSmallFontLabel(Container listingContainer, final String text) {
         final Label addrLabel = new Label(text);
         Font smallFont = Font.createSystemFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL);
         addrLabel.getStyle().setFont(smallFont);
         addrLabel.getStyle().setMargin(1, 1, 1, 1);
         addrLabel.setHeight(smallFont.getHeight());
         listingContainer.addComponent(addrLabel);
+        return addrLabel;
     }
 
-    public static void addRating(Container listingContainer, final String ratingStr) throws NumberFormatException {
+    public static void addRating(Container listingContainer, final String ratingStr, String reviewCount) throws NumberFormatException {
         int rating = Integer.parseInt(ratingStr);
         Container ratingContainer = new Container(new BoxLayout(BoxLayout.X_AXIS));
         for (int j = 1; j <= rating; j++) {
@@ -127,6 +128,13 @@ public class UiUtil {
             Label ratingIcon = new Label(getImage("/img/rating_empty.png", 8));
             ratingContainer.addComponent(ratingIcon);
         }
+        if (UiUtil.isEmpty(reviewCount)) {
+            reviewCount = "0";
+        }
+        reviewCount = reviewCount.trim();
+        final Label l = addSmallFontLabel(ratingContainer, "(" + reviewCount + ")");
+        l.getSelectedStyle().setBgColor(Colors.SELECTEDITEM_BACKGROUND);
+        l.getSelectedStyle().setFont(Font.createSystemFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL));
         listingContainer.addComponent(ratingContainer);
     }
 

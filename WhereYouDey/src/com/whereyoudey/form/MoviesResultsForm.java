@@ -24,7 +24,7 @@ class MoviesResultsForm extends ResultForm {
     }
 
     protected DetailsForm getDetailsForm() {
-        return null;
+        return new MoviesDetailsForm(midlet, this);
     }
 
     protected void addFormSpecificCommands() {
@@ -40,6 +40,7 @@ class MoviesResultsForm extends ResultForm {
     }
 
     protected void renderResult(Result result, Container itemContainer) throws NumberFormatException {
+        result.addProperty("_Type","Movie");
         final String companyName = result.getProperty("CompanyName");
         final String street = result.getProperty("Street");
         final String area = result.getProperty("Area");
@@ -65,15 +66,15 @@ class MoviesResultsForm extends ResultForm {
         return "Movies near " + form.city.getText();
     }
 
-    protected void handleSelect() {
-        String url = resultsList.getSelectedItemResultRecord().getProperty("RSSURL");
-        if (!UiUtil.isEmpty(url)) {
-            if (!url.trim().startsWith("http://")) {
-                url = "http://" + url.trim();
-            }
-            midlet.requestPlatformService(url);
-        } else {
-            DialogUtil.showInfo("Error", "Movie listing does not have an url.");
-        }
-    }
+//    protected void handleSelect() {
+//        String url = resultsList.getSelectedItemResultRecord().getProperty("RSSURL");
+//        if (!UiUtil.isEmpty(url)) {
+//            if (!url.trim().startsWith("http://")) {
+//                url = "http://" + url.trim();
+//            }
+//            midlet.requestPlatformService(url);
+//        } else {
+//            DialogUtil.showInfo("Error", "Movie listing does not have an url.");
+//        }
+//    }
 }

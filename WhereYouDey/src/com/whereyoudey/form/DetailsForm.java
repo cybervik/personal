@@ -4,6 +4,7 @@
  */
 package com.whereyoudey.form;
 
+import com.whereyoudey.utils.FontUtil;
 import com.sun.lwuit.Button;
 import com.sun.lwuit.Command;
 import com.sun.lwuit.Component;
@@ -11,7 +12,6 @@ import com.sun.lwuit.Container;
 import com.sun.lwuit.Dialog;
 import com.sun.lwuit.Display;
 import com.sun.lwuit.Font;
-import com.sun.lwuit.Form;
 import com.sun.lwuit.Graphics;
 import com.sun.lwuit.Image;
 import com.sun.lwuit.Label;
@@ -22,10 +22,8 @@ import com.sun.lwuit.events.ActionEvent;
 import com.sun.lwuit.events.ActionListener;
 import com.sun.lwuit.events.FocusListener;
 import com.sun.lwuit.geom.Rectangle;
-import com.sun.lwuit.layouts.BorderLayout;
 import com.sun.lwuit.layouts.BoxLayout;
-import com.sun.lwuit.layouts.GridLayout;
-import com.sun.midp.io.HttpUrl;
+import com.sun.lwuit.plaf.Border;
 import com.whereyoudey.WhereYouDey;
 import com.whereyoudey.service.helper.Result;
 import com.whereyoudey.form.component.Section;
@@ -39,10 +37,8 @@ import com.whereyoudey.utils.UiUtil;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Vector;
-import javax.microedition.io.ConnectionNotFoundException;
 import javax.microedition.io.Connector;
 import javax.microedition.io.HttpConnection;
-import javax.microedition.midlet.MIDletStateChangeException;
 
 /**
  *
@@ -111,7 +107,7 @@ abstract class DetailsForm implements ActionListener {
         drivingDirectionsDialog.addComponent(label);
     }
 
-    private void addLink(final String linkName) {
+    protected void addLink(final String linkName) {
         final Label link = UiUtil.getLink(linkName);
         links.addComponent(link);
         link.addFocusListener(new FocusListener() {
@@ -127,7 +123,15 @@ abstract class DetailsForm implements ActionListener {
     }
 
     private void call() {
-        final String phoneNumber = result.getProperty(getPhoneProperty());
+        String phoneNumber = result.getProperty(getPhoneProperty());
+        if (UiUtil.isEmpty(phoneNumber)) {
+            DialogUtil.showInfo("Error", "Phone number not found in this result.");
+            return;
+        }
+        if (phoneNumber.indexOf(",") >= 0) {
+            phoneNumber = phoneNumber.substring(0, phoneNumber.indexOf(","));
+        }
+        phoneNumber = phoneNumber.trim();
         if (UiUtil.isEmpty(phoneNumber)) {
             DialogUtil.showInfo("Error", "Phone number not found in this result.");
             return;
@@ -196,7 +200,8 @@ abstract class DetailsForm implements ActionListener {
 
     private void setHeader(Result result) {
         final String bizName = result.getProperty(getHeaderProperty());
-        header.setText(bizName);
+        final String additionalHeaderText = getAdditionalHeaderText();
+        header.setText(bizName + additionalHeaderText);
     }
 
     private void setSmallFont(Component comp) {
@@ -218,11 +223,11 @@ abstract class DetailsForm implements ActionListener {
 
     public void init(Result result) {
         this.result = result;
-        if (isBanner(result)) {
-            final String bannerId = result.getProperty("ID");
-            this.result = new SearchService().getBannerDetails(bannerId);
+        if (isBanner(result) || isMovie(result)) {
+            final String resultId = result.getProperty("ID");
+            this.result = new SearchService().getDetailsFromHelper(resultId);
             if (this.result == null) {
-                throw new ApplicationException("Could not retrieve advertisement details");
+                throw new ApplicationException("Could not retrieve details");
             }
         }
         setHeader(this.result);
@@ -286,6 +291,7 @@ abstract class DetailsForm implements ActionListener {
         try {
             drivingDirectionsDialog.removeAll();
             ExtendedDialog drivingDirectionsInfo = new ExtendedDialog("Get driving directions", "", Dialog.TYPE_CONFIRMATION);
+            drivingDirectionsInfo.setScrollable(false);
             drivingDirectionsInfo.setLayout(new BoxLayout((BoxLayout.Y_AXIS)));
             final Label fromLabel = new Label("From: ");
             fromLabel.getStyle().setFont(FontUtil.getMediumBoldFont());
@@ -299,9 +305,21 @@ abstract class DetailsForm implements ActionListener {
             toLabel.getStyle().setFont(FontUtil.getMediumBoldFont());
             toLabel.getSelectedStyle().setFont(FontUtil.getMediumBoldFont());
             drivingDirectionsInfo.addComponent(toLabel);
-            final Label toAddr = new Label(getAddress());
+
+            TextArea toAddr = new TextArea(getAddress());
             toAddr.getStyle().setFont(FontUtil.getMediumNormalFont());
-            toAddr.getSelectedStyle().setFont(FontUtil.getMediumNormalFont());
+            toAddr.getStyle().setBorder(Border.createEmpty());
+            final Font mediumNormalFont = FontUtil.getMediumNormalFont();
+            final int columns = ((Display.getInstance().getDisplayWidth() - 10) / mediumNormalFont.stringWidth("W"));
+            toAddr.getSelectedStyle().setFont(mediumNormalFont);
+            toAddr.getSelectedStyle().setBorder(Border.createEmpty());
+            toAddr.setRows(3);
+            toAddr.setGrowByContent(false);
+            toAddr.setEditable(false);
+            toAddr.setColumns(columns);
+//            final Label toAddr = new Label(getAddress());
+//            toAddr.getStyle().setFont(FontUtil.getMediumNormalFont());
+//            toAddr.getSelectedStyle().setFont(FontUtil.getMediumNormalFont());
             drivingDirectionsInfo.addComponent(toAddr);
             boolean userChoice = drivingDirectionsInfo.showExtendedDialog();
             do {
@@ -345,7 +363,7 @@ abstract class DetailsForm implements ActionListener {
 //            addDrivingDirectionsInfo(r.getEndAddress(), Font.SIZE_SMALL, Font.STYLE_BOLD);
             drivingDirectionsDialog.showExtendedDialog();
         } catch (Exception ex) {
-            ex.printStackTrace();
+            DialogUtil.showInfo("Error", "Driving directions not found, please try with different values again.");
         }
     }
 
@@ -362,6 +380,7 @@ abstract class DetailsForm implements ActionListener {
         links = new Section(form, "", "");
         addLink(LINK_MAPS);
         addMapSection();
+        addAddtionalLinks();
         addLink(LINK_DRIVING_DIRECTIONS);
         addDrivingDirectionsSection();
     }
@@ -530,5 +549,17 @@ abstract class DetailsForm implements ActionListener {
         routeContainer.addComponent(detailsContainer);
         drivingDirectionsDialog.addComponent(routeContainer);
         drivingDirectionsDialog.addComponent(getHorizontalLine());
+    }
+
+    protected String getAdditionalHeaderText() {
+        return "";
+    }
+
+    protected void addAddtionalLinks() {
+    }
+
+    private boolean isMovie(Result result) {
+        final String type = result.getProperty("_Type");
+        return "Movie".equals(type);
     }
 }

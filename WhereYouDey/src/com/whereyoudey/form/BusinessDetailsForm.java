@@ -4,29 +4,15 @@
  */
 package com.whereyoudey.form;
 
-import com.sun.lwuit.Button;
-import com.sun.lwuit.Command;
-import com.sun.lwuit.Component;
 import com.sun.lwuit.Container;
-import com.sun.lwuit.Dialog;
 import com.sun.lwuit.Font;
-import com.sun.lwuit.Image;
 import com.sun.lwuit.Label;
-import com.sun.lwuit.TextField;
-import com.sun.lwuit.events.ActionEvent;
-import com.sun.lwuit.events.ActionListener;
-import com.sun.lwuit.layouts.BorderLayout;
 import com.sun.lwuit.layouts.BoxLayout;
-import com.sun.lwuit.layouts.FlowLayout;
 import com.whereyoudey.WhereYouDey;
 import com.whereyoudey.form.component.Section;
 import com.whereyoudey.service.helper.Result;
+import com.whereyoudey.utils.Colors;
 import com.whereyoudey.utils.UiUtil;
-import java.io.IOException;
-import java.io.InputStream;
-import javax.microedition.io.ConnectionNotFoundException;
-import javax.microedition.io.Connector;
-import javax.microedition.io.HttpConnection;
 
 /**
  *
@@ -58,7 +44,7 @@ public class BusinessDetailsForm extends DetailsForm {
         phoneNumber = addBigFontLabel("");
         ratingContainer = new Container(new BoxLayout(BoxLayout.X_AXIS));
         form.addComponent(ratingContainer);
-        setRating("0");
+        setRating("0", "0");
     }
 
     protected void addFormSpecificSections() {
@@ -71,7 +57,7 @@ public class BusinessDetailsForm extends DetailsForm {
         keyWords = new Section(form, "Keywords", "");
     }
 
-    private void setRating(final String ratingStr) throws NumberFormatException {
+    private void setRating(final String ratingStr, String reviewCount) throws NumberFormatException {
         int rating = Integer.parseInt(ratingStr);
         ratingContainer.removeAll();
         for (int j = 1; j <= rating; j++) {
@@ -82,6 +68,13 @@ public class BusinessDetailsForm extends DetailsForm {
             Label ratingIcon = new Label(getImage("/img/rating_empty.png", 5));
             ratingContainer.addComponent(ratingIcon);
         }
+        if (UiUtil.isEmpty(reviewCount)) {
+            reviewCount = "0";
+        }
+        reviewCount = reviewCount.trim();
+        final Label l = UiUtil.addSmallFontLabel(ratingContainer, "(" + reviewCount + ")");
+        l.getSelectedStyle().setBgColor(Colors.SELECTEDITEM_BACKGROUND);
+        l.getSelectedStyle().setFont(Font.createSystemFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL));
     }
 
     protected void initResult(Result result) {
@@ -97,11 +90,12 @@ public class BusinessDetailsForm extends DetailsForm {
         final String business = result.getProperty("Business");
         final String prodServices = result.getProperty("ProdServices");
         final String keyWords = result.getProperty("KeyWords");
+        final String reviewCount = result.getProperty("ReviewCount");
         this.address.setText(address);
         this.city.setText(city);
         this.state.setText(state);
         this.phoneNumber.setText(phone);
-        setRating(ratingStr);
+        setRating(ratingStr, reviewCount);
         this.description.setDetails(description);
         this.businessCategory.setDetails(category);
         this.productsInformation.setDetails(prodServices);
@@ -118,6 +112,24 @@ public class BusinessDetailsForm extends DetailsForm {
     }
 
     protected String getAddress() {
-        return result.getProperty("Address");
+        return result.getProperty("Address")
+               + "," + result.getProperty("Area")
+               + "," + result.getProperty("City")
+               + "," + result.getProperty("State");
+    }
+
+    protected String getAdditionalHeaderText() {
+        String additionalText = "";
+        try {
+            final String subType = result.getProperty("SubType");
+            final int subTypeInt = Integer.parseInt(subType);
+            if (subTypeInt == 2) {
+                additionalText = "*";
+            } else if (subTypeInt == 1) {
+                additionalText = "**";
+            }
+        } catch (NumberFormatException numberFormatException) {
+        }
+        return additionalText;
     }
 }

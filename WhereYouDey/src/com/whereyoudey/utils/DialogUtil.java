@@ -4,15 +4,7 @@
  */
 package com.whereyoudey.utils;
 
-import com.sun.lwuit.Command;
 import com.sun.lwuit.Dialog;
-import com.sun.lwuit.Display;
-import com.sun.lwuit.Font;
-import com.sun.lwuit.Label;
-import com.sun.lwuit.TextArea;
-import com.sun.lwuit.layouts.BorderLayout;
-import com.sun.lwuit.plaf.Border;
-import com.whereyoudey.form.FontUtil;
 
 /**
  *

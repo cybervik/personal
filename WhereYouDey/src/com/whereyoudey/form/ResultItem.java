@@ -49,10 +49,16 @@ public class ResultItem extends Container {
 
     public void select() {
         getStyle().setBgPainter(selectedStylePainter);
+        select(this);
+    }
 
-        final int componentCount = getComponentCount();
+    private void select(Container c) {
+        final int componentCount = c.getComponentCount();
         for (int i = 0; i < componentCount; i++) {
-            Component item = getComponentAt(i);
+            Component item = c.getComponentAt(i);
+            if (item instanceof Container) {
+                select((Container) item);
+            }
             setSelectedStyle(item);
         }
     }
@@ -63,11 +69,16 @@ public class ResultItem extends Container {
     }
 
     public void deSelect() {
-
         getStyle().setBgPainter(defaultStylePainter);
+        deSelect(this);
+    }
 
-        for (int i = 0; i < getComponentCount(); i++) {
-            Component item = getComponentAt(i);
+    private void deSelect(Container c) {
+        for (int i = 0; i < c.getComponentCount(); i++) {
+            Component item = c.getComponentAt(i);
+            if (item instanceof Container) {
+                deSelect((Container) item);
+            }
             setDefaultStyle(item);
         }
     }

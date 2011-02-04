@@ -33,11 +33,18 @@ public class Advertisement extends ResultItem {
     }
 
     private void addAdvLabel() {
-        final String imageUrl = "http://www.whereyoudey.com/mainpagebanners/" + getResultRecord().getProperty("Banner");
-        System.out.println("Banner image url" + imageUrl);
-        advLabel = UiUtil.getImageLabelFromUrl(imageUrl, Display.getInstance().getDisplayWidth()-10);
+        final String bannerId = getResultRecord().getProperty("Banner");
+        advLabel = BannerUtil.getBanner(bannerId);
         setDefaultStyle(advLabel);
         addComponent(advLabel);
+        advLabel.getStyle().setMargin(0, 0, 0, 0);
+        advLabel.getStyle().setPadding(0, 0, 0, 0);
+        advLabel.getSelectedStyle().setMargin(0, 0, 0, 0);
+        advLabel.getSelectedStyle().setPadding(0, 0, 0, 0);
+        getStyle().setMargin(0, 0, 0, 0);
+        getStyle().setPadding(0, 0, 0, 0);
+        getSelectedStyle().setMargin(0, 0, 0, 0);
+        getSelectedStyle().setPadding(0, 0, 0, 0);
     }
 
     protected void setDefaultStyle(Component comp) {

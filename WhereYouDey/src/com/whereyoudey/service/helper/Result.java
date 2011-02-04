@@ -23,7 +23,7 @@ public class Result {
         properties = new Vector(INITIAL_SIZE);
     }
 
-    public void setProperty(String name, String value) {
+    public void addProperty(String name, String value) {
         Property p = new Property(name, value);
         properties.addElement(p);
     }

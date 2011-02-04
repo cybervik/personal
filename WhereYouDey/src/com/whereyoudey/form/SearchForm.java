@@ -4,6 +4,7 @@
  */
 package com.whereyoudey.form;
 
+import com.whereyoudey.form.helper.FormDialogs;
 import com.sun.lwuit.Command;
 import com.sun.lwuit.Component;
 import com.sun.lwuit.Container;

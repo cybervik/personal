@@ -77,7 +77,7 @@ public class SearchService {
                 case XmlPullParser.TEXT:
                     String text = parser.getText();
                     if (processingResult) {
-                        resultObj.setProperty(tagName, text);
+                        resultObj.addProperty(tagName, text);
                     }
                     break;
             }
@@ -134,7 +134,7 @@ public class SearchService {
         return banners;
     }
 
-    public Result getBannerDetails(String bannerId) {
+    public Result getDetailsFromHelper(String bannerId) {
         try {
             SearchHelper_Stub stub = new SearchHelper_Stub();
             final String bannerDetailsAsXml = stub.getBusinessDetail(bannerId);

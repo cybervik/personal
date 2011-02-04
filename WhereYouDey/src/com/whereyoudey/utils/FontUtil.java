@@ -3,7 +3,7 @@
  * and open the template in the editor.
  */
 
-package com.whereyoudey.form;
+package com.whereyoudey.utils;
 
 import com.sun.lwuit.Font;
 

@@ -32,10 +32,16 @@ public class BusinessResultsForm extends ResultForm {
         final String state = result.getProperty("State");
         final String phone = result.getProperty("Phone");
         final String ratingStr = result.getProperty("StarReview");
-        final String reviewCountStr = result.getProperty("ReviewCount");
+        final String reviewCount = result.getProperty("ReviewCount");
+        final String businessType = result.getProperty("SubType");
         try {
-            int reviewCount = Integer.parseInt(reviewCountStr);
-            for (int j = 0; j < reviewCount; j++) {
+            int bizTypeInt = Integer.parseInt(businessType);
+            if (bizTypeInt == 2) {
+                bizTypeInt = 1;
+            } else if (bizTypeInt == 1) {
+                bizTypeInt = 2;
+            }
+            for (int j = 0; j < bizTypeInt; j++) {
                 bizName += "*";
             }
         } catch (Exception e) {
@@ -44,7 +50,7 @@ public class BusinessResultsForm extends ResultForm {
         UiUtil.addSmallFontLabel(itemContainer, address);
         UiUtil.addSmallFontLabel(itemContainer, city + ", " + state);
         UiUtil.addSmallFontLabel(itemContainer, phone);
-        UiUtil.addRating(itemContainer, ratingStr);
+        UiUtil.addRating(itemContainer, ratingStr, reviewCount);
     }
 
     protected void addFormSpecificCommands() {
