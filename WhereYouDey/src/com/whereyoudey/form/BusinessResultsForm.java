@@ -54,6 +54,8 @@ public class BusinessResultsForm extends ResultForm {
     }
 
     protected void addFormSpecificCommands() {
+        form.addCommand(new Command(OPTION_PREV));
+        form.addCommand(new Command(OPTION_NEXT));
         form.addCommand(new Command(OPTION_SORT_BY_RELEVANCE));
         form.addCommand(new Command(OPTION_SORT_BY_CITY));
         form.addCommand(new Command(OPTION_SORT_BY_AREA));

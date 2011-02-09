@@ -2,7 +2,6 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package com.whereyoudey.form.component;
 
 import com.sun.lwuit.Container;
@@ -18,6 +17,7 @@ import com.whereyoudey.utils.UiUtil;
  * @author Vikram S
  */
 public class Header {
+
     private final Label title;
     private final Label resultCounter;
 
@@ -40,9 +40,11 @@ public class Header {
         title.setText(text);
     }
 
-    public void setResultCount(int resultCount) {
+    public void setResultCount(int pageNumber, int resultCount) {
+        int startIndex = ((pageNumber - 1) * 10) + 1;
+        int endIndex = startIndex + resultCount - 1;
         if (resultCount > 0) {
-            resultCounter.setText("Result 1 - " + resultCount);
+            resultCounter.setText("Result " + startIndex + " - " + endIndex);
         } else {
             resultCounter.setText("No results found");
         }
@@ -51,5 +53,4 @@ public class Header {
     public void setTitle(String title) {
         this.title.setText(title);
     }
-
 }

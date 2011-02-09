@@ -76,6 +76,8 @@ abstract class DetailsForm implements ActionListener {
     private int mapHeight;
     private ExtendedDialog drivingDirectionsDialog;
     private TextArea drivingDirectionsArea;
+    private static final String VIDEO_LINK = "Video";
+    protected String videoUrl;
 
     public DetailsForm(WhereYouDey midlet, ResultForm callingForm) {
         this.midlet = midlet;
@@ -223,13 +225,13 @@ abstract class DetailsForm implements ActionListener {
 
     public void init(Result result) {
         this.result = result;
-        if (isBanner(result) || isMovie(result)) {
-            final String resultId = result.getProperty("ID");
-            this.result = new SearchService().getDetailsFromHelper(resultId);
-            if (this.result == null) {
-                throw new ApplicationException("Could not retrieve details");
-            }
+//        if (isBanner(result) || isMovie(result)) {
+        final String resultId = result.getProperty("ID");
+        this.result = new SearchService().getDetailsFromHelper(resultId);
+        if (this.result == null) {
+            throw new ApplicationException("Could not retrieve details");
         }
+//        }
         setHeader(this.result);
         initResult(this.result);
         header.setFocus(true);
@@ -261,23 +263,13 @@ abstract class DetailsForm implements ActionListener {
 
     protected void selectAction(String focussedName) {
         if (focussedName.equals(LINK_MAPS)) {
-            try {
-                HttpConnection conn = (HttpConnection) Connector.open("http://maps.google.com/maps/api/staticmap?"
-                                                                      + "center=" + UiUtil.urlEncode(getAddress())
-                                                                      + "&zoom=12"
-                                                                      + "&size=" + (mapWidth)
-                                                                      + "x" + (mapHeight)
-                                                                      + "&sensor=false");
-                conn.setRequestMethod(HttpConnection.GET);
-                InputStream input = conn.openInputStream();
-                final Image img = Image.createImage(input);
-                mapImage.setIcon(img);
-                mapImageDialog.showExtendedDialog();
-            } catch (IOException ex) {
-                ex.printStackTrace();
+            showStaticMap();
+        } else if (focussedName.equals(VIDEO_LINK)) {
+            if (UiUtil.isEmpty(videoUrl)) {
+                DialogUtil.showInfo("Error", "No videos found for this result.");
+            } else {
+                midlet.requestPlatformService(videoUrl);
             }
-        } else if (focussedName.equals(LINK_VIDEO_AUDIO)) {
-            midlet.requestPlatformService(LINK_AUDIO_VIDEO_URL);
         } else if (focussedName.equals(LINK_OFFERS)) {
             midlet.requestPlatformService(LINK_OFFERS_URL);
         } else if (focussedName.equals(LINK_DRIVING_DIRECTIONS)) {
@@ -285,6 +277,69 @@ abstract class DetailsForm implements ActionListener {
         } else {
             selectActionPerformed(focussedName);
         }
+    }
+
+    private void showStaticMap() {
+        Thread t = new Thread(new Runnable() {
+
+            public void run() {
+                try {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException ex) {
+                        ex.printStackTrace();
+                    }
+                    final String address = UiUtil.urlEncode(getAddress(), false);
+                    String url = "http://maps.google.com/maps/api/staticmap?"
+                                 + "center=" + address
+                                 + "&zoom=15"
+                                 + "&maptype=roadmap"
+                                 + "&" + UiUtil.urlEncode("feature:all", false)
+                                 + "&markers=" + UiUtil.urlEncode("color:orange|label:1|", false) + address
+                                 + "&size=" + (mapWidth) + "x" + (mapHeight)
+                                 + "&sensor=false";
+//                    url = "http://maps.google.com/maps/api/staticmap?"
+//                          + "center=" + UiUtil.urlEncode(getAddress())
+//                          + "&zoom=12"
+//                          + "&size=" + (mapWidth)
+//                          + "x" + (mapHeight)
+//                          + "&sensor=false";
+//                    url = "http://www.whereyoudey.com/mainpagebanners/jo_blez_banner.jpg";
+                    System.out.println("URL for static map - " + url);
+                    HttpConnection conn = (HttpConnection) Connector.open(url);
+                    conn.setRequestMethod(HttpConnection.GET);
+                    InputStream input = conn.openInputStream();
+                    final Image img;
+                    try {
+                        img = Image.createImage(input);
+                    } finally {
+                        input.close();
+                        conn.close();
+                    }
+                    mapImage.setIcon(img);
+                    if (Display.getInstance().isEdt()) {
+                        System.out.println("Show static map - this is edt");
+                        DialogUtil.hideWait();
+                        mapImageDialog.showExtendedDialog();
+                    } else {
+                        System.out.println("Show static map - this is not edt");
+                        Display.getInstance().callSerially(new Runnable() {
+
+                            public void run() {
+                                System.out.println("Show static map - in edt now");
+                                DialogUtil.hideWait();
+                                mapImageDialog.showExtendedDialog();
+                            }
+                        });
+                    }
+                } catch (Exception ex) {
+                    DialogUtil.hideWait();
+                    ex.printStackTrace();
+                }
+            }
+        });
+        t.start();
+        DialogUtil.showWait();
     }
 
     private void showDrivingDirections() {
@@ -317,9 +372,6 @@ abstract class DetailsForm implements ActionListener {
             toAddr.setGrowByContent(false);
             toAddr.setEditable(false);
             toAddr.setColumns(columns);
-//            final Label toAddr = new Label(getAddress());
-//            toAddr.getStyle().setFont(FontUtil.getMediumNormalFont());
-//            toAddr.getSelectedStyle().setFont(FontUtil.getMediumNormalFont());
             drivingDirectionsInfo.addComponent(toAddr);
             boolean userChoice = drivingDirectionsInfo.showExtendedDialog();
             do {
@@ -331,39 +383,70 @@ abstract class DetailsForm implements ActionListener {
                     userChoice = drivingDirectionsInfo.showExtendedDialog();
                 }
             } while (UiUtil.isEmpty(fromAddrField.getText()));
-            DrivingDirections dd = new DrivingDirections(fromAddrField.getText(), getAddress());
-            final Vector routes = dd.getRoutes();
-            Route r = (Route) dd.getRoutes().elementAt(0);
-            addDrivingDirectionsTitle("Driving directions to " + r.getEndAddress());
-//            addDrivingDirectionsInfo("Driving directions to " + r.getEndAddress(), Font.SIZE_MEDIUM, Font.STYLE_BOLD);
-            DrivingDirectionsSummary summary = new DrivingDirectionsSummary();
-            summary.addLine("Route Summary: " + r.getSummary());
-            summary.addLine("Total Time: " + r.getDuration().getText());
-            summary.addLine("Total Distance: " + r.getDistance().getText());
-            summary.addHorizontalLine();
-            addDrivingDirectionsSummary(summary);
-//            addDrivingDirectionsInfo("Route Summary: " + r.getSummary(), Font.SIZE_SMALL, Font.STYLE_PLAIN);
-//            addDrivingDirectionsInfo("Total Time: "+r.getDuration().getText(), Font.SIZE_SMALL, Font.STYLE_PLAIN);
-//            addDrivingDirectionsInfo("Total Distance: "+r.getDistance().getText(), Font.SIZE_SMALL, Font.STYLE_PLAIN);
-//            addDrivingDirectionsInfo(" ", Font.SIZE_MEDIUM, Font.STYLE_PLAIN);
-            addDrivingDirectionsMarker(r.getStartAddress(), "a");
-//            addDrivingDirectionsInfo(r.getStartAddress(), Font.SIZE_SMALL, Font.STYLE_BOLD);
-//            addDrivingDirectionsInfo("  ", Font.SIZE_MEDIUM, Font.STYLE_PLAIN);
-            Vector v = r.getSteps();
-            for (int i = 0; i < v.size(); i++) {
-                Steps s = (Steps) v.elementAt(i);
-                final String stepDetails = (i + 1) + ". " + s.getHtmlInstructions();
-                final String stepDetails2 = s.getDistance().getText() + "             " + s.getDuration().getText();
-                addDrivingDirectionsRoute(i + 1, s.getHtmlInstructions(), s.getDistance().getText(), s.getDuration().getText());
-//                addDrivingDirectionsInfo(stepDetails, Font.SIZE_SMALL, Font.STYLE_BOLD);
-//                addDrivingDirectionsInfo(stepDetails2, Font.SIZE_SMALL, Font.STYLE_PLAIN);
-//                addDrivingDirectionsInfo("  ", Font.SIZE_MEDIUM, Font.STYLE_PLAIN);
-            }
-            addDrivingDirectionsMarker(r.getEndAddress(), "b");
-//            addDrivingDirectionsInfo(r.getEndAddress(), Font.SIZE_SMALL, Font.STYLE_BOLD);
-            drivingDirectionsDialog.showExtendedDialog();
+            Thread t = new Thread(new Runnable() {
+
+                public void run() {
+                    try {
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException ex) {
+                            ex.printStackTrace();
+                        }
+                        DrivingDirections dd = new DrivingDirections(fromAddrField.getText(), getAddress());
+                        final Vector routes = dd.getRoutes();
+                        Route r = (Route) dd.getRoutes().elementAt(0);
+                        addDrivingDirectionsTitle("Driving directions to " + r.getEndAddress());
+                        //            addDrivingDirectionsInfo("Driving directions to " + r.getEndAddress(), Font.SIZE_MEDIUM, Font.STYLE_BOLD);
+                        DrivingDirectionsSummary summary = new DrivingDirectionsSummary();
+                        summary.addLine("Route Summary: " + r.getSummary());
+                        summary.addLine("Total Time: " + r.getDuration().getText());
+                        summary.addLine("Total Distance: " + r.getDistance().getText());
+                        summary.addHorizontalLine();
+                        addDrivingDirectionsSummary(summary);
+                        //            addDrivingDirectionsInfo("Route Summary: " + r.getSummary(), Font.SIZE_SMALL, Font.STYLE_PLAIN);
+                        //            addDrivingDirectionsInfo("Total Time: "+r.getDuration().getText(), Font.SIZE_SMALL, Font.STYLE_PLAIN);
+                        //            addDrivingDirectionsInfo("Total Distance: "+r.getDistance().getText(), Font.SIZE_SMALL, Font.STYLE_PLAIN);
+                        //            addDrivingDirectionsInfo(" ", Font.SIZE_MEDIUM, Font.STYLE_PLAIN);
+                        addDrivingDirectionsMarker(r.getStartAddress(), "a");
+                        //            addDrivingDirectionsInfo(r.getStartAddress(), Font.SIZE_SMALL, Font.STYLE_BOLD);
+                        //            addDrivingDirectionsInfo("  ", Font.SIZE_MEDIUM, Font.STYLE_PLAIN);
+                        Vector v = r.getSteps();
+                        for (int i = 0; i < v.size(); i++) {
+                            Steps s = (Steps) v.elementAt(i);
+                            final String stepDetails = (i + 1) + ". " + s.getHtmlInstructions();
+                            final String stepDetails2 = s.getDistance().getText() + "             " + s.getDuration().getText();
+                            addDrivingDirectionsRoute(i + 1, s.getHtmlInstructions(), s.getDistance().getText(), s.getDuration().getText());
+                            //                addDrivingDirectionsInfo(stepDetails, Font.SIZE_SMALL, Font.STYLE_BOLD);
+                            //                addDrivingDirectionsInfo(stepDetails2, Font.SIZE_SMALL, Font.STYLE_PLAIN);
+                            //                addDrivingDirectionsInfo("  ", Font.SIZE_MEDIUM, Font.STYLE_PLAIN);
+                        }
+                        addDrivingDirectionsMarker(r.getEndAddress(), "b");
+                        //            addDrivingDirectionsInfo(r.getEndAddress(), Font.SIZE_SMALL, Font.STYLE_BOLD);
+                        if (Display.getInstance().isEdt()) {
+                            DialogUtil.hideWait();
+                            drivingDirectionsDialog.showExtendedDialog();
+                            form.show();
+                        } else {
+                            Display.getInstance().callSerially(new Runnable() {
+
+                                public void run() {
+                                    DialogUtil.hideWait();
+                                    drivingDirectionsDialog.showExtendedDialog();
+                                    form.show();
+                                }
+                            });
+                        }
+                    } catch (Exception ex) {
+                        DialogUtil.hideWait();
+                        ex.printStackTrace();
+                        DialogUtil.showInfo("Error", "No routes found for this search.");
+                    }
+                }
+            });
+            t.start();
+            DialogUtil.showWait();
         } catch (Exception ex) {
-            DialogUtil.showInfo("Error", "Driving directions not found, please try with different values again.");
+            DialogUtil.showInfo("Error", "No routes found for this search.");
         }
     }
 
@@ -382,46 +465,14 @@ abstract class DetailsForm implements ActionListener {
         addMapSection();
         addAddtionalLinks();
         addLink(LINK_DRIVING_DIRECTIONS);
+        addLink(VIDEO_LINK);
         addDrivingDirectionsSection();
     }
 
     protected void addDrivingDirectionsSection() {
-//        mapWidth = Display.getInstance().getDisplayWidth() - 2;
-//        mapHeight = Display.getInstance().getDisplayHeight() - 8 - FontUtil.getMediumNormalFont().getHeight();
         drivingDirectionsDialog = new ExtendedDialog();
         drivingDirectionsDialog.setLayout(new BoxLayout((BoxLayout.Y_AXIS)));
         drivingDirectionsDialog.setScrollable(true);
-//        drivingDirectionsDialog.setScrollable(false);
-//        drivingDirectionsArea = new TextArea();
-//        drivingDirectionsArea.setRows(5);
-//        drivingDirectionsArea.setGrowByContent(true);
-//        drivingDirectionsArea.setColumns(mapWidth);
-//        drivingDirectionsArea.getStyle().setMargin(0, 0, 0, 0);
-//        drivingDirectionsArea.getStyle().setPadding(0, 0, 0, 0);
-//        drivingDirectionsArea.getSelectedStyle().setMargin(0, 0, 0, 0);
-//        drivingDirectionsArea.getSelectedStyle().setPadding(0, 0, 0, 0);
-//        drivingDirectionsArea.setPreferredW(mapWidth);
-//        drivingDirectionsArea.setPreferredH(mapHeight);
-//        drivingDirectionsArea.setWidth(mapWidth);
-//        drivingDirectionsArea.setHeight(mapHeight);
-//        drivingDirectionsDialog.addComponent(drivingDirectionsArea);
-//        drivingDirectionsDialog.getStyle().setMargin(0, 0, 0, 0);
-//        drivingDirectionsDialog.getStyle().setPadding(0, 0, 0, 0);
-//        drivingDirectionsDialog.getSelectedStyle().setMargin(0, 0, 0, 0);
-//        drivingDirectionsDialog.getSelectedStyle().setPadding(0, 0, 0, 0);
-//        drivingDirectionsDialog.setPreferredW(mapWidth);
-//        drivingDirectionsDialog.setPreferredH(mapHeight);
-//        drivingDirectionsDialog.setWidth(mapWidth);
-//        drivingDirectionsDialog.setHeight(mapHeight);
-//        final Container contentPane = drivingDirectionsDialog.getContentPane();
-//        contentPane.getStyle().setMargin(0, 0, 0, 0);
-//        contentPane.getStyle().setPadding(0, 0, 0, 0);
-//        contentPane.getSelectedStyle().setMargin(0, 0, 0, 0);
-//        contentPane.getSelectedStyle().setPadding(0, 0, 0, 0);
-//        contentPane.setPreferredW(mapWidth);
-//        contentPane.setPreferredH(mapHeight);
-//        contentPane.setWidth(mapWidth);
-//        contentPane.setHeight(mapHeight);
     }
 
     protected void addMapSection() {

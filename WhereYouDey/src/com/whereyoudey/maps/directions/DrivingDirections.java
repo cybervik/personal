@@ -83,7 +83,13 @@ public class DrivingDirections {
         HttpConnection conn = (HttpConnection) Connector.open(finalURL);
         conn.setRequestMethod(HttpConnection.GET);
         InputStream input = conn.openInputStream();
-        String jsonData = readData(input);
+        String jsonData = "";
+        try {
+            jsonData = readData(input);
+        } finally {
+            input.close();
+            conn.close();
+        }
         return jsonData;
     }
 

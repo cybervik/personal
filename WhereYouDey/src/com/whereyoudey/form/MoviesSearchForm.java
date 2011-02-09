@@ -30,8 +30,7 @@ class MoviesSearchForm extends EventsSearchForm {
         return 3;
     }
 
-    protected void searchAction() {
-        results = searchService.searchMovies(city.getText().trim());
+    public Result[] searchAction(int pageNumber) {
+        return searchService.searchMovies(city.getText().trim());
     }
-
 }

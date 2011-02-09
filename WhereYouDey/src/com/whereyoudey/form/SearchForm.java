@@ -4,6 +4,7 @@
  */
 package com.whereyoudey.form;
 
+import com.whereyoudey.constants.AppConstants;
 import com.whereyoudey.form.helper.FormDialogs;
 import com.sun.lwuit.Command;
 import com.sun.lwuit.Component;
@@ -11,7 +12,6 @@ import com.sun.lwuit.Container;
 import com.sun.lwuit.Dialog;
 import com.sun.lwuit.Display;
 import com.sun.lwuit.Font;
-import com.sun.lwuit.Form;
 import com.sun.lwuit.Label;
 import com.sun.lwuit.TextField;
 import com.sun.lwuit.events.ActionEvent;
@@ -26,10 +26,6 @@ import com.whereyoudey.service.SearchService;
 import com.whereyoudey.utils.Colors;
 import com.whereyoudey.utils.DialogUtil;
 import com.whereyoudey.utils.UiUtil;
-import com.whereyoudey.webservice.Search;
-import java.rmi.RemoteException;
-import javax.microedition.io.ConnectionNotFoundException;
-import searchhelper.SearchHelper_Stub;
 
 /**
  *
@@ -45,7 +41,6 @@ public abstract class SearchForm implements ActionListener, Runnable {
     public static final String ICON_NAME_OFFERS = "Offers";
     public static final String ICON_NAME_SMS_ADS = "SMS Ads";
     public static final String ICON_NAME_VIDEOS = "Videos";
-    public static final int ICON_WIDTH = 20;
     public static final String LINK_MORE = "More";
     public static final String LINK_SELECT_CITY = "Select City";
     public static final String LOGO_PATH = "/img/logo.png";
@@ -79,9 +74,7 @@ public abstract class SearchForm implements ActionListener, Runnable {
     protected ExtendedForm form;
     protected WhereYouDey midlet;
     protected Container topContainer;
-    protected Dialog waitDialog;
-    protected Result[] results;
-    private ResultForm resultForm;
+    protected ResultForm resultForm;
     private ListForm cityOptionsform;
     private SearchForm eventsForm;
     final Command selectCommand = new Command(OPTION_SELECT);
@@ -97,7 +90,7 @@ public abstract class SearchForm implements ActionListener, Runnable {
         if (OPTION_EXIT.equals(commandName)) {
             midlet.exit();
         } else if (OPTION_FIND.equals(commandName)) {
-            search();
+            search(1);
         } else if (OPTION_ABOUT_US.equals(commandName)) {
             FormDialogs.showAbout();
         } else if (OPTION_HELP.equals(commandName)) {
@@ -148,10 +141,10 @@ public abstract class SearchForm implements ActionListener, Runnable {
 
     private void addIcons() {
         Container icons = UiUtil.getBoxLayoutColumnStyleContainer();
-        int noOfIconsFittingInScreenWidth = (DISPLAY_WIDTH - MORE_LINK_POSSIBLE_WIDTH) / ICON_WIDTH;
+        int noOfIconsFittingInScreenWidth = (DISPLAY_WIDTH - MORE_LINK_POSSIBLE_WIDTH) / AppConstants.ICON_WIDTH;
         for (int i = 0; i < noOfIconsFittingInScreenWidth && i < iconPaths.length; i++) {
             final int pos = i;
-            final Label image = UiUtil.getImageLabel(iconPaths[i], ICON_WIDTH);
+            final Label image = UiUtil.getImageLabel(iconPaths[i], AppConstants.ICON_WIDTH);
             image.setFocusable(true);
             image.addFocusListener(new FocusListener() {
 
@@ -233,12 +226,6 @@ public abstract class SearchForm implements ActionListener, Runnable {
         return form.getFocused();
     }
 
-    protected void hideWait() {
-        if (waitDialog != null) {
-            waitDialog.dispose();
-        }
-    }
-
     private void initForm() {
         createForm();
         addMainElements();
@@ -250,24 +237,6 @@ public abstract class SearchForm implements ActionListener, Runnable {
         form.show();
     }
 
-    public void showWait() {
-        waitDialog = new Dialog();
-        waitDialog.setLayout(new BorderLayout());
-        waitDialog.getStyle().setBgColor(Colors.FORM_BACKGROUND);
-        Label waitLabel = UiUtil.getImageLabel("/img/wait.png", ICON_WIDTH);
-        waitLabel.setText("Searching");
-        Font smallFont = Font.createSystemFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL);
-        waitLabel.getStyle().setFont(smallFont);
-        waitLabel.getStyle().setMargin(0, 0, 0, 0);
-        waitLabel.getStyle().setPadding(0, 0, 0, 0);
-        waitLabel.getStyle().setBgColor(Colors.FORM_BACKGROUND);
-        waitDialog.addComponent(BorderLayout.CENTER, waitLabel);
-        try {
-            waitDialog.showPacked(BorderLayout.CENTER, true);
-        } catch (Exception e) {
-        }
-    }
-
     public void run() {
         try {
             Thread.sleep(1000);
@@ -276,20 +245,21 @@ public abstract class SearchForm implements ActionListener, Runnable {
         }
         try {
             loadBanners();
-            searchAction();
+            Result [] results = searchAction(1);
             initResultForm(results);
-            hideWait();
+            DialogUtil.hideWait();
             resultForm.show();
         } catch (Exception e) {
-            DialogUtil.showInfo("Error", "Could not connect to server.");
+            DialogUtil.showInfo("Error", "No results found.");
         }
-        hideWait();
+        DialogUtil.hideWait();
     }
 
     private void initResultForm(Result[] results) throws NumberFormatException {
         if (resultForm == null) {
             resultForm = getResultForm(results);
         } else {
+            resultForm.setPageNumber(1);
             resultForm.initResults(results);
         }
     }
@@ -298,14 +268,14 @@ public abstract class SearchForm implements ActionListener, Runnable {
         return resultForm;
     }
 
-    public void search() {
+    public void search(int pageNumber) {
         if (!isFormValid()) {
             DialogUtil.showInfo("Error", getFormInvalidMessage());
             return;
         }
         Thread t = new Thread(this);
         t.start();
-        showWait();
+        DialogUtil.showWait();
     }
 
     protected abstract void addFormFields();
@@ -314,7 +284,7 @@ public abstract class SearchForm implements ActionListener, Runnable {
 
     protected abstract boolean isFormValid();
 
-    protected abstract void searchAction();
+    public abstract Result[] searchAction(int pageNumber);
 
     protected abstract int getSelectedIconPos();
 

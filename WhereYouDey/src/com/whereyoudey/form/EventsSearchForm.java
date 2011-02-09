@@ -28,7 +28,7 @@ class EventsSearchForm extends SearchForm {
         UiUtil.addBoldMediumFontLabel(topContainer, getFormTitle());
         city = UiUtil.addTextFieldWithLabel(topContainer, "City");
         addSelectCityLink();
-        city.setText("Calabar");
+//        city.setText("Calabar");
     }
 
     protected String getFormTitle() {
@@ -42,8 +42,8 @@ class EventsSearchForm extends SearchForm {
         return !UiUtil.isEmpty(city.getText().trim());
     }
 
-    protected void searchAction() {
-        results = searchService.searchEvents(city.getText().trim());
+    public Result[] searchAction(int pageNumber) {
+        return searchService.searchEvents(city.getText().trim());
     }
 
     protected int getSelectedIconPos() {

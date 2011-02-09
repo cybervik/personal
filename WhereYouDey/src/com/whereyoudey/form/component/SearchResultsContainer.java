@@ -6,14 +6,10 @@ package com.whereyoudey.form.component;
 
 import com.sun.lwuit.Component;
 import com.sun.lwuit.Container;
-import com.sun.lwuit.Font;
 import com.sun.lwuit.Graphics;
-import com.sun.lwuit.Label;
 import com.sun.lwuit.Painter;
 import com.sun.lwuit.geom.Rectangle;
 import com.sun.lwuit.layouts.BoxLayout;
-import com.sun.lwuit.layouts.FlowLayout;
-import com.sun.lwuit.layouts.Layout;
 import com.whereyoudey.WhereYouDey;
 import com.whereyoudey.form.ResultItem;
 import com.whereyoudey.service.helper.Result;

@@ -10,20 +10,15 @@ import com.whereyoudey.utils.SortUtil;
 import com.sun.lwuit.Command;
 import com.sun.lwuit.Container;
 import com.sun.lwuit.Dialog;
-import com.sun.lwuit.Font;
-import com.sun.lwuit.Form;
-import com.sun.lwuit.Label;
+import com.sun.lwuit.Display;
 import com.sun.lwuit.events.ActionEvent;
 import com.sun.lwuit.events.ActionListener;
 import com.sun.lwuit.layouts.BorderLayout;
 import com.whereyoudey.WhereYouDey;
 import com.whereyoudey.form.component.SearchResultsContainer;
-import com.whereyoudey.service.SearchService;
 import com.whereyoudey.service.helper.Result;
-import com.whereyoudey.utils.Colors;
 import com.whereyoudey.utils.DialogUtil;
 import com.whereyoudey.utils.UiUtil;
-import javax.microedition.io.ConnectionNotFoundException;
 
 /**
  *
@@ -54,6 +49,11 @@ public abstract class ResultForm implements ActionListener, Runnable {
     private Dialog waitDialog;
     final Command selectCmd = new Command(OPTION_SELECT);
     final Command callCmd = new Command(OPTION_CALL);
+    private int pageNumber = 1;
+    private boolean backTraversal = false;
+    private boolean forwardTraversal = false;
+
+    ;
 
     ResultForm(WhereYouDey midlet, Result[] results, SearchForm callingForm) {
         this.callingForm = callingForm;
@@ -73,8 +73,6 @@ public abstract class ResultForm implements ActionListener, Runnable {
         form.addCommand(new Command(OPTION_EXIT));
         form.addCommand(new Command(OPTION_HELP));
         form.addCommand(new Command(OPTION_HOME));
-        form.addCommand(new Command(OPTION_PREV));
-        form.addCommand(new Command(OPTION_NEXT));
         addFormSpecificCommands();
         form.addCommand(callCmd);
         form.addCommandListener(this);
@@ -160,7 +158,11 @@ public abstract class ResultForm implements ActionListener, Runnable {
             if (result != null) {
                 Container itemContainer = new ResultItem(result);
                 renderResult(result, itemContainer);
-                resultsList.addComponent(itemContainer);
+                try {
+                    resultsList.addComponent(itemContainer);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
         updateHeader();
@@ -168,7 +170,7 @@ public abstract class ResultForm implements ActionListener, Runnable {
     }
 
     private void updateHeader() {
-        header.setResultCount(resultsList.getCount());
+        header.setResultCount(pageNumber, resultsList.getCount());
         updateTitle();
     }
 
@@ -181,6 +183,7 @@ public abstract class ResultForm implements ActionListener, Runnable {
 
     private void initVariables(WhereYouDey midlet) {
         this.midlet = midlet;
+        this.pageNumber = 1;
     }
 
     private void initForm() {
@@ -250,38 +253,32 @@ public abstract class ResultForm implements ActionListener, Runnable {
         } else if (commandName.equals(OPTION_CALL)) {
             call();
         } else if (commandName.equals(OPTION_NEXT)) {
-            callingForm.search();
+            if (results.length == MAX_RESULTS) {
+                pageNumber++;
+                forwardTraversal = true;
+                backTraversal = false;
+                search();
+            } else {
+                DialogUtil.showInfo("Info", "You have reached the last page. There are no more results to show.");
+            }
         } else if (commandName.equals(OPTION_PREV)) {
-            callingForm.search();
+            if (pageNumber > 1) {
+                pageNumber--;
+                forwardTraversal = false;
+                backTraversal = true;
+                search();
+            } else {
+                DialogUtil.showInfo("Info", "Sorry, you are in the first page. There is no previous page to show.");
+            }
         } else {
             handleFormSpecificCommandAction(commandName);
         }
     }
 
-    public void search() {
+    private void search() {
         Thread t = new Thread(this);
         t.start();
-        showWait();
-    }
-
-    public void showWait() {
-        waitDialog = new Dialog();
-        waitDialog.setLayout(new BorderLayout());
-        waitDialog.getStyle().setBgColor(Colors.FORM_BACKGROUND);
-        Label waitLabel = UiUtil.getImageLabel("/img/wait.png", 20);
-        waitLabel.setText("Searching");
-        Font smallFont = Font.createSystemFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL);
-        waitLabel.getStyle().setFont(smallFont);
-        waitLabel.getStyle().setMargin(0, 0, 0, 0);
-        waitLabel.getStyle().setPadding(0, 0, 0, 0);
-        waitLabel.getStyle().setBgColor(Colors.FORM_BACKGROUND);
-        waitDialog.addComponent(BorderLayout.CENTER, waitLabel);
-        try {
-            waitDialog.showPacked(BorderLayout.CENTER, true);
-        } catch (Exception e) {
-            System.out.println("Error in show wait");
-            e.printStackTrace();
-        }
+        DialogUtil.showWait();
     }
 
     public void run() {
@@ -291,18 +288,19 @@ public abstract class ResultForm implements ActionListener, Runnable {
             ex.printStackTrace();
         }
         try {
-            callingForm.searchAction();
-            initResults(results);
-            hideWait();
+            final Result[] searchResults = callingForm.searchAction(pageNumber);
+            Display.getInstance().callSerially(new Runnable() {
+
+                public void run() {
+                    if (searchResults.length > 0) {
+                        initResults(searchResults);
+                    }
+                    DialogUtil.hideWait();
+                }
+            });
         } catch (Exception e) {
             System.out.println("Error Occurred ....");
             e.printStackTrace();
-        }
-    }
-
-    private void hideWait() {
-        if (waitDialog != null) {
-            waitDialog.dispose();
         }
     }
 
@@ -311,4 +309,29 @@ public abstract class ResultForm implements ActionListener, Runnable {
     protected abstract String getTitleProperty();
 
     protected abstract String getTitle();
+
+    void setPageNumber(int pageNum) {
+        this.pageNumber = pageNum;
+        forwardTraversal = false;
+        backTraversal = false;
+    }
+
+    int getPageNunber() {
+        return pageNumber;
+    }
+
+    void setPageNumberOnError() {
+        int oldpagen = pageNumber;
+        if (backTraversal) {
+            pageNumber++;
+            System.out.println("Reset page number from " + oldpagen + " to " + pageNumber);
+        } else if (pageNumber > 1 && forwardTraversal) {
+            pageNumber--;
+            System.out.println("Reset page number from " + oldpagen + " to " + pageNumber);
+        } else {
+            System.out.println("Reset page number - did not do anything - " + oldpagen + " to " + pageNumber);
+        }
+        backTraversal = false;
+        forwardTraversal = false;
+    }
 }

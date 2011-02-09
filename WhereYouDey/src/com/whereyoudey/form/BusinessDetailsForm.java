@@ -85,12 +85,13 @@ public class BusinessDetailsForm extends DetailsForm {
         final String state = result.getProperty("State");
         final String phone = result.getProperty("Phone");
         final String ratingStr = result.getProperty("StarReview");
-        final String description = result.getProperty("Description");
+        final String description = result.getProperty("Description") + "\n" + result.getProperty("GeneralInfoP1") + "\n" + result.getProperty("GeneralInfoP2");
         final String category = result.getProperty("Category");
-        final String business = result.getProperty("Business");
-        final String prodServices = result.getProperty("ProdServices");
+        final String additionalInfo = result.getProperty("AdditionalInfo")+ "\n" + result.getProperty("Email");
+        final String prodServices = result.getProperty("ProdServices") + "\n" + result.getProperty("Products") + "\n" + result.getProperty("ProdServices");
         final String keyWords = result.getProperty("KeyWords");
         final String reviewCount = result.getProperty("ReviewCount");
+        final String hoursOfOperation = result.getProperty("BusinessHours");
         this.address.setText(address);
         this.city.setText(city);
         this.state.setText(state);
@@ -100,7 +101,9 @@ public class BusinessDetailsForm extends DetailsForm {
         this.businessCategory.setDetails(category);
         this.productsInformation.setDetails(prodServices);
         this.keyWords.setDetails(keyWords);
-        this.additionalInformation.setDetails(business);
+        this.additionalInformation.setDetails(additionalInfo);
+        this.hoursOfOperation.setDetails(hoursOfOperation);
+        this.videoUrl = result.getProperty("YouTubeVideoLink");
     }
 
     protected String getHeaderProperty() {

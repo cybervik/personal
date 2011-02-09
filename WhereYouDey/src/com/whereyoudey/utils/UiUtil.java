@@ -4,36 +4,16 @@
  */
 package com.whereyoudey.utils;
 
-import com.sun.lwuit.Button;
-import com.sun.lwuit.ComboBox;
-import com.sun.lwuit.Command;
 import com.sun.lwuit.Component;
 import com.sun.lwuit.Container;
-import com.sun.lwuit.Dialog;
-import com.sun.lwuit.Display;
 import com.sun.lwuit.Font;
-import com.sun.lwuit.Form;
 import com.sun.lwuit.Image;
 import com.sun.lwuit.Label;
-import com.sun.lwuit.List;
 import com.sun.lwuit.TextField;
-import com.sun.lwuit.events.ActionEvent;
-import com.sun.lwuit.events.ActionListener;
-import com.sun.lwuit.events.DataChangedListener;
-import com.sun.lwuit.events.FocusListener;
-import com.sun.lwuit.events.SelectionListener;
 import com.sun.lwuit.layouts.BoxLayout;
-import com.sun.lwuit.layouts.CoordinateLayout;
-import com.sun.lwuit.layouts.FlowLayout;
-import com.sun.lwuit.list.DefaultListCellRenderer;
 import com.sun.lwuit.plaf.Border;
-import com.whereyoudey.WhereYouDey;
-import com.whereyoudey.form.ListForm;
-import com.whereyoudey.form.ResultForm;
-import com.whereyoudey.form.BusinessSearchForm;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Vector;
 import javax.microedition.io.Connector;
 import javax.microedition.io.HttpConnection;
 
@@ -59,8 +39,13 @@ public class UiUtil {
         try {
             HttpConnection conn = (HttpConnection) Connector.open(url);
             conn.setRequestMethod(HttpConnection.GET);
-            InputStream input = conn.openInputStream();
-            img = Image.createImage(input);
+            InputStream in = conn.openInputStream();
+            try {
+                img = Image.createImage(in);
+            } finally {
+                in.close();
+                conn.close();
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -171,7 +156,7 @@ public class UiUtil {
     }
 
     public static boolean isEmpty(String str) {
-        return "".equals(str);
+        return str == null || "".equals(str.trim());
     }
 
     public static Container getBoxLayoutColumnStyleContainer() {
@@ -207,7 +192,7 @@ public class UiUtil {
         }
     }
 
-    static public String urlEncode(String url) {
+    static public String urlEncode(String url, boolean limitedEncoding) {
         StringBuffer encodedUrl = new StringBuffer();
         for (int i = 0; i < url.length(); i++) {
             char ch = url.charAt(i);
@@ -219,16 +204,98 @@ public class UiUtil {
                     encodedUrl.append("%3E");
                     break;
                 case '/':
-                    encodedUrl.append("%2F");
+                    if (!limitedEncoding) {
+                        encodedUrl.append("%2F");
+                    } else {
+                        encodedUrl.append(ch);
+                    }
                     break;
                 case ' ':
+                case '\t':
                     encodedUrl.append("%20");
                     break;
                 case ':':
-                    encodedUrl.append("%3A");
+                    if (!limitedEncoding) {
+                        encodedUrl.append("%3A");
+                    } else {
+                        encodedUrl.append(ch);
+                    }
                     break;
                 case '-':
                     encodedUrl.append("%2D");
+                    break;
+                case '|':
+                    encodedUrl.append("%7C");
+                    break;
+                case '$':
+                    encodedUrl.append("%24");
+                    break;
+                case '&':
+                    if (!limitedEncoding) {
+                        encodedUrl.append("%26");
+                    } else {
+                        encodedUrl.append(ch);
+                    }
+                    break;
+                case '`':
+                    encodedUrl.append("%60");
+                    break;
+                case '[':
+                    encodedUrl.append("%5B");
+                    break;
+                case ']':
+                    encodedUrl.append("%5D");
+                    break;
+                case '{':
+                    encodedUrl.append("%7B");
+                    break;
+                case '}':
+                    encodedUrl.append("%7D");
+                    break;
+                case '"':
+                    encodedUrl.append("%22");
+                    break;
+                case '+':
+                    encodedUrl.append("%2B");
+                    break;
+                case '#':
+                    encodedUrl.append("%23");
+                    break;
+                case '%':
+                    encodedUrl.append("%25");
+                    break;
+                case '@':
+                    encodedUrl.append("%40");
+                    break;
+                case ';':
+                    encodedUrl.append("%3B");
+                    break;
+                case '=':
+                    encodedUrl.append("%3D");
+                    break;
+                case '?':
+                    if (!limitedEncoding) {
+                        encodedUrl.append("%3F");
+                    } else {
+                        encodedUrl.append(ch);
+                    }
+                    break;
+                case '\\':
+                    encodedUrl.append("%5C");
+                    break;
+                case '^':
+                    encodedUrl.append("%5E");
+                    break;
+                case '~':
+                    encodedUrl.append("%7E");
+                    break;
+                case '\'':
+                    encodedUrl.append("%27");
+                    break;
+                case ',':
+                    encodedUrl.append("%2C");
+                    break;
+                case '\n':
                     break;
                 default:
                     encodedUrl.append(ch);

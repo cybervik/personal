@@ -49,7 +49,7 @@ public class EventDetailsForm extends DetailsForm {
         final String telephone2 = result.getProperty("Telephone2");
         final String venue = result.getProperty("Venue");
         final String keywords = result.getProperty("KeyWords");
-        final String description = result.getProperty("Description");
+        final String description = result.getProperty("Description") + "\n" + result.getProperty("GeneralInfoP1") + "\n" + result.getProperty("GeneralInfoP2");
         final String lattitude = result.getProperty("Lattitude");
         final String longitude = result.getProperty("Longitude");
         final String website = result.getProperty("Website");
@@ -64,6 +64,7 @@ public class EventDetailsForm extends DetailsForm {
         this.keywords.setDetails(keywords);
         this.description.setDetails(description);
         this.category.setDetails(category);
+        this.videoUrl = result.getProperty("YouTubeVideoLink");
     }
 
     private void setPrimaryPhoneProperty(final String telephone1, final String telephone2) {

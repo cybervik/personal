@@ -1,6 +1,5 @@
 package com.whereyoudey.service;
 
-import com.sun.lwuit.TextField;
 import com.whereyoudey.service.helper.Result;
 import java.io.IOException;
 import java.rmi.RemoteException;
@@ -18,19 +17,13 @@ public class SearchService {
 
     public static final int MAX_RESULTS = 10;
 
-    public Result[] searchBusinessData(String name, String location, ArrayOfString filter) {
+    public Result[] searchBusinessData(String name, String location, ArrayOfString filter) throws RemoteException, XmlPullParserException, IOException {
         Result[] result = null;
-        try {
-            Search_Stub service = new Search_Stub();
-            String[] searchResult = service.SearchData(name, location, filter).getString();
-            String resultAsXml = searchResult[0];
-            System.out.println(resultAsXml);
-            result = processResponse(resultAsXml, "SearchResults", "Result");
-        } catch (XmlPullParserException ex) {
-            ex.printStackTrace();
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
+        Search_Stub service = new Search_Stub();
+        String[] searchResult = service.SearchData(name, location, filter).getString();
+        String resultAsXml = searchResult[0];
+        System.out.println(resultAsXml);
+        result = processResponse(resultAsXml, "SearchResults", "Result");
         return result;
     }
 
