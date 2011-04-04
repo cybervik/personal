@@ -25,11 +25,11 @@ public class DrivingDirectionsSummary extends Container {
     }
 
     void addLine(String lineData) {
-        final Label lbl = new Label(lineData);
-        lbl.getStyle().setMargin(1, 0, 1, 0);
-        lbl.getSelectedStyle().setMargin(1, 0, 1, 0);
-        lbl.getStyle().setFont(FontUtil.getMediumNormalFont());
-        lbl.getSelectedStyle().setFont(FontUtil.getMediumNormalFont());
+        final WrappingLabel lbl = new WrappingLabel(lineData, Display.getInstance().getDisplayWidth() - 10, FontUtil.getMediumBoldFont());
+//        lbl.getStyle().setMargin(1, 0, 1, 0);
+//        lbl.getSelectedStyle().setMargin(1, 0, 1, 0);
+//        lbl.getStyle().setFont(FontUtil.getMediumNormalFont());
+//        lbl.getSelectedStyle().setFont(FontUtil.getMediumNormalFont());
         addComponent(lbl);
     }
 

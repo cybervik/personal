@@ -9,6 +9,7 @@ import com.sun.lwuit.Command;
 import com.sun.lwuit.Container;
 import com.whereyoudey.WhereYouDey;
 import com.whereyoudey.service.helper.Result;
+import com.whereyoudey.utils.FontUtil;
 import com.whereyoudey.utils.UiUtil;
 
 /**
@@ -28,6 +29,7 @@ public class EventsResultsForm extends ResultForm {
     }
 
     protected void renderResult(Result result, Container itemContainer) throws NumberFormatException {
+        result.addProperty("_Type", "Event");
         final String eventName = result.getProperty("EventName");
         final String date = result.getProperty("DatesAndTimes");
         final String street = result.getProperty("Street");
@@ -41,10 +43,11 @@ public class EventsResultsForm extends ResultForm {
         setPrimaryPhoneProperty(telephone1, telephone2);
         UiUtil.add(itemContainer, eventName, true);
 //        UiUtil.add(itemContainer, date);
-        UiUtil.add(itemContainer, venue);
+        UiUtil.add(itemContainer, "Venue: " + venue);
 //        UiUtil.add(itemContainer, UiUtil.getCommaSepFormat(street, area));
-        UiUtil.add(itemContainer, UiUtil.getCommaSepFormat(city, state));
-        UiUtil.add(itemContainer, category);
+        itemContainer.addComponent(new WrappingLabel(UiUtil.getCommaSepFormat(city, state), FontUtil.getSmallNormalFont()));
+//        UiUtil.add(itemContainer, UiUtil.getCommaSepFormat(city, state));
+        UiUtil.add(itemContainer, "Category:" + category);
 //        UiUtil.add(itemContainer, UiUtil.getCommaSepFormat(telephone1, telephone2));
     }
 
@@ -77,6 +80,6 @@ public class EventsResultsForm extends ResultForm {
 
     protected String getTitle() {
         EventsSearchForm form = (EventsSearchForm) callingForm;
-        return "Events near "+form.city.getText();
+        return "Events near " + form.city.getText();
     }
 }

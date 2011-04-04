@@ -42,7 +42,7 @@ public class BusinessSearchForm extends SearchForm {
         addBusinessTextField();
         addAreaTextField();
         addSelectCityLink();
-//        this.business.setText("Barber");
+        this.business.setText("Barber");
     }
 
     private void addAreaTextField() {

@@ -14,6 +14,8 @@ import com.sun.lwuit.Label;
 import com.sun.lwuit.Painter;
 import com.sun.lwuit.geom.Rectangle;
 import com.sun.lwuit.layouts.BoxLayout;
+import com.whereyoudey.form.WrappingLabel;
+import com.whereyoudey.utils.FontUtil;
 import com.whereyoudey.utils.UiUtil;
 
 /**
@@ -23,16 +25,18 @@ import com.whereyoudey.utils.UiUtil;
 public class Section {
 
     private final Form form;
-    private final Label title;
-    private final Label desc;
+    private final WrappingLabel title;
+    private final WrappingLabel desc;
     private final Container container;
 
     public Section(final Form form, String title, String desc) {
         this.form = form;
         container = new Container(new BoxLayout(BoxLayout.Y_AXIS));
         addLine();
-        this.title = addBigFontLabel(title);
-        this.desc = addSmallFontLabel(desc);
+        this.title = new WrappingLabel(title, FontUtil.getMediumBoldFont());
+        container.addComponent(this.title);
+        this.desc = new WrappingLabel(desc, FontUtil.getSmallNormalFont());
+        container.addComponent(this.desc);
         container.setFocusable(true);
         form.addComponent(container);
     }
@@ -69,7 +73,7 @@ public class Section {
     }
 
     public void setDetails(String description) {
-        desc.setText(description);
+        desc.setText(description, FontUtil.getSmallNormalFont());
     }
 
     public void addComponent(Component comp) {

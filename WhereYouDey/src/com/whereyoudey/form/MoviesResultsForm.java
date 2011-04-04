@@ -9,6 +9,7 @@ import com.sun.lwuit.Container;
 import com.whereyoudey.WhereYouDey;
 import com.whereyoudey.service.helper.Result;
 import com.whereyoudey.utils.DialogUtil;
+import com.whereyoudey.utils.FontUtil;
 import com.whereyoudey.utils.SortUtil;
 import com.whereyoudey.utils.UiUtil;
 import javax.microedition.io.ConnectionNotFoundException;
@@ -46,7 +47,8 @@ class MoviesResultsForm extends ResultForm {
         final String area = result.getProperty("Area");
         final String city = result.getProperty("City");
         UiUtil.add(itemContainer, companyName, true);
-        UiUtil.add(itemContainer, UiUtil.getCommaSepFormat(street, area));
+        itemContainer.addComponent(new WrappingLabel(UiUtil.getCommaSepFormat(street, area), FontUtil.getSmallNormalFont()));
+//        UiUtil.add(itemContainer, UiUtil.getCommaSepFormat(street, area));
         UiUtil.add(itemContainer, city);
     }
 

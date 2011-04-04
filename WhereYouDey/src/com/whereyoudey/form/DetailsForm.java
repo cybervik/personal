@@ -59,7 +59,7 @@ abstract class DetailsForm implements ActionListener {
     public static final String LINK_OFFERS_URL = "http://whereyoudey.com/offers";
     public static final String LINK_VIDEO_AUDIO = "Video/Audio";
     protected ExtendedForm form;
-    private Label header;
+    private WrappingLabel header;
     protected final WhereYouDey midlet;
     protected Result result;
     private final ResultForm callingForm;
@@ -177,7 +177,7 @@ abstract class DetailsForm implements ActionListener {
     }
 
     private void addHeader() {
-        header = new Label("");
+        header = new WrappingLabel("", FontUtil.getMediumBoldFont());
         header.getStyle().setBgColor(0x000000);
         header.getStyle().setFgColor(0xffffff);
         header.getSelectedStyle().setBgColor(0x000000);
@@ -203,7 +203,7 @@ abstract class DetailsForm implements ActionListener {
     private void setHeader(Result result) {
         final String bizName = result.getProperty(getHeaderProperty());
         final String additionalHeaderText = getAdditionalHeaderText();
-        header.setText(bizName + additionalHeaderText);
+        header.setText(bizName + additionalHeaderText, FontUtil.getMediumBoldFont());
     }
 
     private void setSmallFont(Component comp) {
@@ -225,13 +225,13 @@ abstract class DetailsForm implements ActionListener {
 
     public void init(Result result) {
         this.result = result;
-//        if (isBanner(result) || isMovie(result)) {
-        final String resultId = result.getProperty("ID");
-        this.result = new SearchService().getDetailsFromHelper(resultId);
-        if (this.result == null) {
-            throw new ApplicationException("Could not retrieve details");
+        if (!isEvent(result)) {
+            final String resultId = result.getProperty("ID");
+            this.result = new SearchService().getDetailsFromHelper(resultId);
+            if (this.result == null) {
+                throw new ApplicationException("Could not retrieve details");
+            }
         }
-//        }
         setHeader(this.result);
         initResult(this.result);
         header.setFocus(true);
@@ -356,6 +356,7 @@ abstract class DetailsForm implements ActionListener {
             fromAddrField.getStyle().setFont(FontUtil.getMediumNormalFont());
             fromAddrField.getSelectedStyle().setFont(FontUtil.getMediumNormalFont());
             drivingDirectionsInfo.addComponent(fromAddrField);
+            fromAddrField.setText("Abuja");
             final Label toLabel = new Label("To: ");
             toLabel.getStyle().setFont(FontUtil.getMediumBoldFont());
             toLabel.getSelectedStyle().setFont(FontUtil.getMediumBoldFont());
@@ -523,9 +524,9 @@ abstract class DetailsForm implements ActionListener {
     protected abstract String getAddress();
 
     private void addDrivingDirectionsTitle(String titleMessage) {
-        final Label title = new Label(titleMessage);
-        title.getStyle().setFont(FontUtil.getMediumBoldFont());
-        title.getSelectedStyle().setFont(FontUtil.getMediumBoldFont());
+        final WrappingLabel title = new WrappingLabel(titleMessage, Display.getInstance().getDisplayWidth() - 25, FontUtil.getMediumBoldFont());
+//        title.getStyle().setFont(FontUtil.getMediumBoldFont());
+//        title.getSelectedStyle().setFont(FontUtil.getMediumBoldFont());
         drivingDirectionsDialog.addComponent(title);
         final Label dummy = new Label(" ");
         dummy.getStyle().setFont(FontUtil.getSmallNormalFont());
@@ -539,7 +540,7 @@ abstract class DetailsForm implements ActionListener {
     private void addDrivingDirectionsMarker(String markerData, String markerLabel) {
         Container c = new Container(new BoxLayout((BoxLayout.X_AXIS)));
         c.addComponent(UiUtil.getImageLabel("/img/marker" + markerLabel + ".jpg"));
-        final Label dataLabel = new Label(markerData);
+        final WrappingLabel dataLabel = new WrappingLabel(markerData, Display.getInstance().getDisplayWidth() - FontUtil.getMediumBoldFont().stringWidth("999") - 10, FontUtil.getMediumBoldFont());
         dataLabel.getStyle().setMargin(1, 0, 1, 0);
         dataLabel.getSelectedStyle().setMargin(1, 0, 1, 0);
         dataLabel.getStyle().setFont(FontUtil.getMediumBoldFont());
@@ -551,7 +552,7 @@ abstract class DetailsForm implements ActionListener {
 
     private Label getHorizontalLine() {
         Label line = new Label(" ");
-        line.setWidth(Display.getInstance().getDisplayWidth());
+        line.setWidth(Display.getInstance().getDisplayWidth() - 10);
         Font smallFont = Font.createSystemFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL);
         line.getStyle().setFont(smallFont);
         line.getStyle().setBgPainter(new Painter() {
@@ -573,15 +574,18 @@ abstract class DetailsForm implements ActionListener {
         stepLabel.getSelectedStyle().setMargin(1, 0, 1, 0);
         stepLabel.getStyle().setFont(FontUtil.getMediumBoldFont());
         stepLabel.getSelectedStyle().setFont(FontUtil.getMediumBoldFont());
-        stepLabel.setPreferredW(FontUtil.getMediumBoldFont().stringWidth("999"));
+        final int indexWidth = FontUtil.getMediumBoldFont().stringWidth("999");
+        stepLabel.setPreferredW(indexWidth);
         routeContainer.addComponent(stepLabel);
+
         Container detailsContainer = new Container(new BoxLayout(BoxLayout.Y_AXIS));
-        Label instructionsLabel = new Label(instructions);
+        WrappingLabel instructionsLabel = new WrappingLabel(instructions, Display.getInstance().getDisplayWidth() - indexWidth - 20, FontUtil.getMediumBoldFont());
         instructionsLabel.getStyle().setMargin(1, 0, 1, 0);
         instructionsLabel.getSelectedStyle().setMargin(1, 0, 1, 0);
-        instructionsLabel.getStyle().setFont(FontUtil.getMediumBoldFont());
-        instructionsLabel.getSelectedStyle().setFont(FontUtil.getMediumBoldFont());
+//        instructionsLabel.getStyle().setFont(FontUtil.getMediumBoldFont());
+//        instructionsLabel.getSelectedStyle().setFont(FontUtil.getMediumBoldFont());
         detailsContainer.addComponent(instructionsLabel);
+
         Container distanceDurationContainer = new Container(new BoxLayout((BoxLayout.X_AXIS)));
         Label distanceLabel = new Label(distance);
         distanceLabel.getStyle().setMargin(1, 0, 1, 0);
@@ -590,6 +594,7 @@ abstract class DetailsForm implements ActionListener {
         distanceLabel.getSelectedStyle().setFont(FontUtil.getMediumNormalFont());
         distanceLabel.setPreferredW(FontUtil.getMediumNormalFont().stringWidth("0.35 KMSSSS"));
         distanceDurationContainer.addComponent(distanceLabel);
+
         Label durationLabel = new Label(duration);
         durationLabel.getStyle().setMargin(1, 0, 1, 0);
         durationLabel.getSelectedStyle().setMargin(1, 0, 1, 0);
@@ -598,6 +603,7 @@ abstract class DetailsForm implements ActionListener {
         distanceDurationContainer.addComponent(durationLabel);
         detailsContainer.addComponent(distanceDurationContainer);
         routeContainer.addComponent(detailsContainer);
+
         drivingDirectionsDialog.addComponent(routeContainer);
         drivingDirectionsDialog.addComponent(getHorizontalLine());
     }
@@ -612,5 +618,10 @@ abstract class DetailsForm implements ActionListener {
     private boolean isMovie(Result result) {
         final String type = result.getProperty("_Type");
         return "Movie".equals(type);
+    }
+
+    private boolean isEvent(Result result) {
+        final String type = result.getProperty("_Type");
+        return "Event".equals(type);
     }
 }

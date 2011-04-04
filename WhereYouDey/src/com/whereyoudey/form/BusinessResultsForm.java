@@ -9,6 +9,7 @@ import com.sun.lwuit.Command;
 import com.sun.lwuit.Container;
 import com.whereyoudey.WhereYouDey;
 import com.whereyoudey.service.helper.Result;
+import com.whereyoudey.utils.FontUtil;
 import com.whereyoudey.utils.UiUtil;
 
 /**
@@ -47,7 +48,8 @@ public class BusinessResultsForm extends ResultForm {
         } catch (Exception e) {
         }
         UiUtil.addBoldSmallFontLabel(itemContainer, bizName);
-        UiUtil.addSmallFontLabel(itemContainer, address);
+        itemContainer.addComponent(new WrappingLabel(address, FontUtil.getSmallNormalFont()));
+//        UiUtil.addSmallFontLabel(itemContainer, address);
         UiUtil.addSmallFontLabel(itemContainer, city + ", " + state);
         UiUtil.addSmallFontLabel(itemContainer, phone);
         UiUtil.addRating(itemContainer, ratingStr, reviewCount);

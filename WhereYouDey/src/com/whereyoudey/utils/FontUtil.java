@@ -32,4 +32,8 @@ public class FontUtil {
     public static Font getSmallNormalFont() {
         return getFont(Font.STYLE_PLAIN, Font.SIZE_SMALL);
     }
+
+    public static Font getBigBoldFont() {
+        return getFont(Font.STYLE_BOLD, Font.SIZE_LARGE);
+    }
 }

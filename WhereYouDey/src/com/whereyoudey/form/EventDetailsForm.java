@@ -8,6 +8,7 @@ import com.sun.lwuit.Label;
 import com.whereyoudey.WhereYouDey;
 import com.whereyoudey.form.component.Section;
 import com.whereyoudey.service.helper.Result;
+import com.whereyoudey.utils.FontUtil;
 import com.whereyoudey.utils.UiUtil;
 
 /**
@@ -17,9 +18,9 @@ import com.whereyoudey.utils.UiUtil;
 public class EventDetailsForm extends DetailsForm {
 
     private Section date;
-    private Label address1;
-    private Label address2;
-    private Label telephone;
+    private WrappingLabel address1;
+    private WrappingLabel address2;
+    private WrappingLabel telephone;
     private Label website;
     private Section description;
     private Section venue;
@@ -57,9 +58,9 @@ public class EventDetailsForm extends DetailsForm {
         setPrimaryPhoneProperty(telephone1, telephone2);
         this.date.setDetails(date);
         this.venue.setDetails(venue);
-        address1.setText(UiUtil.getCommaSepFormat(street, area));
-        address2.setText(UiUtil.getCommaSepFormat(city, state));
-        telephone.setText(UiUtil.getCommaSepFormat(telephone1, telephone2));
+        address1.setText(UiUtil.getCommaSepFormat(street, area), FontUtil.getSmallNormalFont());
+        address2.setText(UiUtil.getCommaSepFormat(city, state), FontUtil.getSmallNormalFont());
+        telephone.setText(UiUtil.getCommaSepFormat(telephone1, telephone2), FontUtil.getSmallNormalFont());
         this.website.setText(website);
         this.keywords.setDetails(keywords);
         this.description.setDetails(description);
@@ -72,13 +73,17 @@ public class EventDetailsForm extends DetailsForm {
     }
 
     protected void addBasicInfo() {
-        address1 = addSmallFontLabel("");
-        address2 = addSmallFontLabel("");
+        address1 = new WrappingLabel("", FontUtil.getSmallNormalFont());
+        form.addComponent(address1);
+        address2 = new WrappingLabel("", FontUtil.getSmallNormalFont());
+        form.addComponent(address2);
         //date = addSmallFontLabel("");
         //venue = addSmallFontLabel("");
         //category = addSmallFontLabel("");
-        //telephone = addSmallFontLabel("");
-        //website = addSmallFontLabel("");
+        telephone = new WrappingLabel("", FontUtil.getSmallNormalFont());
+        form.addComponent(telephone);
+        website = UiUtil.getLink(" ");//addSmallFontLabel("");
+        form.addComponent(website);
     }
 
     protected void addFormSpecificSections() {
@@ -94,5 +99,11 @@ public class EventDetailsForm extends DetailsForm {
         final String area = result.getProperty("Area");
         final String city = result.getProperty("City");
         return UiUtil.getCommaSepFormat(UiUtil.getCommaSepFormat(street, area), city);
+    }
+
+    protected void selectActionPerformed(String focussedName) {
+        if (focussedName.equals(website.getText())) {
+            midlet.requestPlatformService(website.getText());
+        }
     }
 }

@@ -12,6 +12,7 @@ import com.whereyoudey.WhereYouDey;
 import com.whereyoudey.form.component.Section;
 import com.whereyoudey.service.helper.Result;
 import com.whereyoudey.utils.Colors;
+import com.whereyoudey.utils.FontUtil;
 import com.whereyoudey.utils.UiUtil;
 
 /**
@@ -20,8 +21,8 @@ import com.whereyoudey.utils.UiUtil;
  */
 public class BusinessDetailsForm extends DetailsForm {
 
-    private Label address;
-    private Label phoneNumber;
+    private WrappingLabel address;
+    private WrappingLabel phoneNumber;
     private Container ratingContainer;
     private Section hoursOfOperation;
     private Section description;
@@ -30,18 +31,22 @@ public class BusinessDetailsForm extends DetailsForm {
     private Section businessCategory;
     private Section additionalInformation;
     private Section keyWords;
-    private Label state;
-    private Label city;
+    private WrappingLabel state;
+    private WrappingLabel city;
 
     public BusinessDetailsForm(WhereYouDey midlet, ResultForm callingForm) {
         super(midlet, callingForm);
     }
 
     protected void addBasicInfo() {
-        address = addSmallFontLabel("");
-        city = addSmallFontLabel("");
-        state = addSmallFontLabel("");
-        phoneNumber = addBigFontLabel("");
+        address = new WrappingLabel("", FontUtil.getSmallNormalFont());//addSmallFontLabel("");
+        form.addComponent(address);
+        city = new WrappingLabel("", FontUtil.getSmallNormalFont());//addSmallFontLabel("");
+        form.addComponent(city);
+        state = new WrappingLabel("", FontUtil.getSmallNormalFont());//addSmallFontLabel("");
+        form.addComponent(state);
+        phoneNumber = new WrappingLabel("", FontUtil.getBigBoldFont());//addBigFontLabel("");
+        form.addComponent(phoneNumber);
         ratingContainer = new Container(new BoxLayout(BoxLayout.X_AXIS));
         form.addComponent(ratingContainer);
         setRating("0", "0");
@@ -79,23 +84,21 @@ public class BusinessDetailsForm extends DetailsForm {
 
     protected void initResult(Result result) {
         final String address = result.getProperty("Address");
-        final String street = result.getProperty("Street");
-        final String area = result.getProperty("Area");
         final String city = result.getProperty("City");
         final String state = result.getProperty("State");
         final String phone = result.getProperty("Phone");
         final String ratingStr = result.getProperty("StarReview");
         final String description = result.getProperty("Description") + "\n" + result.getProperty("GeneralInfoP1") + "\n" + result.getProperty("GeneralInfoP2");
         final String category = result.getProperty("Category");
-        final String additionalInfo = result.getProperty("AdditionalInfo")+ "\n" + result.getProperty("Email");
+        final String additionalInfo = result.getProperty("AdditionalInfo") + "\n" + result.getProperty("Email");
         final String prodServices = result.getProperty("ProdServices") + "\n" + result.getProperty("Products") + "\n" + result.getProperty("ProdServices");
         final String keyWords = result.getProperty("KeyWords");
         final String reviewCount = result.getProperty("ReviewCount");
         final String hoursOfOperation = result.getProperty("BusinessHours");
-        this.address.setText(address);
-        this.city.setText(city);
-        this.state.setText(state);
-        this.phoneNumber.setText(phone);
+        this.address.setText(address, FontUtil.getSmallNormalFont());
+        this.city.setText(city, FontUtil.getSmallNormalFont());
+        this.state.setText(state, FontUtil.getSmallNormalFont());
+        this.phoneNumber.setText(phone, FontUtil.getBigBoldFont());
         setRating(ratingStr, reviewCount);
         this.description.setDetails(description);
         this.businessCategory.setDetails(category);
